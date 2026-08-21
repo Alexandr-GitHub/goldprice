@@ -1,4 +1,4 @@
-GoldPrice 1.0.0-pl
+GoldPrice 1.0.1-pl
 
 Dynamic gold pricing for MODX Revolution and miniShop2.
 License: MIT.

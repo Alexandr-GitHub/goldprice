@@ -2,7 +2,7 @@
 
 Компонент [MODX Revolution](https://modx.com/) + [miniShop2](https://modstore.pro/packages/ecommerce/minishop2): котировки золота и USD/RUB, расчёт цен продажи и выкупа, корзина с серверной ценой, заявки на скупку, режим «Шторм».
 
-Лицензия: [MIT](LICENSE). Готовый пакет для установки — в [Releases](https://github.com/Alexandr-GitHub/goldprice/releases): `goldprice-1.0.0-pl.transport.zip`.
+Лицензия: [MIT](LICENSE). Готовый пакет для установки — в [Releases](https://github.com/Alexandr-GitHub/goldprice/releases): `goldprice-1.0.1-pl.transport.zip`.
 
 ## Требования
 
@@ -14,7 +14,7 @@
 
 ## Установка
 
-1. Скачайте `goldprice-1.0.0-pl.transport.zip` из релиза.
+1. Скачайте `goldprice-1.0.1-pl.transport.zip` из релиза.
 2. Положите файл в `core/packages/` сайта.
 3. В админке: **Приложения → Установщик → Искать пакеты локально → Установить**.
 4. Заполните системные настройки (пустые в пакете специально):
@@ -118,5 +118,5 @@ MODX снимает объекты пакета и файлы. Восемь та
 ```
 assets/components/goldprice/     # CMP JS/CSS, connector
 core/components/goldprice/       # PHP, модель, _build, тесты
-goldprice-1.0.0-pl.transport.zip # готовый пакет (также в GitHub Release)
+goldprice-1.0.1-pl.transport.zip # готовый пакет (также в GitHub Release)
 ```

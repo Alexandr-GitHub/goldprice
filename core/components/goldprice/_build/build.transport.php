@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.0.0');
+define('PKG_VERSION', '1.0.1');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -37,6 +37,44 @@ $builder->registerNamespace(
     '{core_path}components/' . PKG_NAME . '/',
     '{assets_path}components/' . PKG_NAME . '/'
 );
+
+// Файлы идут первыми: resolve.tables.php поднимает xPDO-пакет из
+// core/components/goldprice/model, которого на чистой установке ещё нет.
+// Whitelist keeps _build, tests, vendor and composer files out of the package.
+foreach (array('model', 'src', 'lexicon', 'elements', 'cron', 'processors', 'controllers') as $dir) {
+    if (!is_dir($root . $dir)) {
+        continue;
+    }
+    $builder->package->put(
+        array(
+            'source' => $root . $dir,
+            'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
+        ),
+        array('vehicle_class' => 'xPDOFileVehicle')
+    );
+}
+
+foreach (array('goldprice.class.php', 'index.class.php') as $file) {
+    $builder->package->put(
+        array(
+            'source' => $root . $file,
+            'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
+        ),
+        array('vehicle_class' => 'xPDOFileVehicle')
+    );
+}
+
+$assetsPath = MODX_ASSETS_PATH . 'components/' . PKG_NAME . '/';
+if (is_dir($assetsPath)) {
+    $builder->package->put(
+        array(
+            'source' => $assetsPath,
+            'target' => "return MODX_ASSETS_PATH . 'components/';",
+        ),
+        array('vehicle_class' => 'xPDOFileVehicle')
+    );
+}
+$modx->log(modX::LOG_LEVEL_INFO, 'File vehicles packed.');
 
 $category = $modx->newObject('modCategory');
 $category->set('id', 1);
@@ -150,47 +188,6 @@ $builder->putVehicle($builder->createVehicle($menu, array(
     xPDOTransport::UNIQUE_KEY => 'text',
 )));
 $modx->log(modX::LOG_LEVEL_INFO, 'Menu item packed.');
-
-// Whitelist keeps _build, tests, vendor and composer files out of the package.
-foreach (array('model', 'src', 'lexicon', 'elements', 'cron', 'processors', 'controllers') as $dir) {
-    if (!is_dir($root . $dir)) {
-        continue;
-    }
-    $builder->package->put(
-        array(
-            'source' => $root . $dir,
-            'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
-        ),
-        array('vehicle_class' => 'xPDOFileVehicle')
-    );
-}
-
-$builder->package->put(
-    array(
-        'source' => $root . 'goldprice.class.php',
-        'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
-    ),
-    array('vehicle_class' => 'xPDOFileVehicle')
-);
-$builder->package->put(
-    array(
-        'source' => $root . 'index.class.php',
-        'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
-    ),
-    array('vehicle_class' => 'xPDOFileVehicle')
-);
-
-$assetsPath = MODX_ASSETS_PATH . 'components/' . PKG_NAME . '/';
-if (is_dir($assetsPath)) {
-    $builder->package->put(
-        array(
-            'source' => $assetsPath,
-            'target' => "return MODX_ASSETS_PATH . 'components/';",
-        ),
-        array('vehicle_class' => 'xPDOFileVehicle')
-    );
-}
-$modx->log(modX::LOG_LEVEL_INFO, 'File vehicles packed.');
 
 $builder->setPackageAttributes(array(
     'license' => file_exists($sources['build'] . 'docs/license.txt')
