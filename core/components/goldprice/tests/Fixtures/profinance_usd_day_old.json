@@ -1,0 +1,46 @@
+[
+  {
+    "msg": "result",
+    "respCode": "0",
+    "message": [
+      {
+        "msg": "quote",
+        "ticker": "gold",
+        "bid": "4489.7400",
+        "ask": "4490.4400",
+        "netchange": "155.59000",
+        "netchangepers": "3.59%",
+        "utcdt": "19-08-2026 17:24:17.000000",
+        "jutcdt": "1787245192178"
+      },
+      {
+        "msg": "lastprice",
+        "ticker": "gold",
+        "last": "4490.1000",
+        "netchange": "155.58000",
+        "netchangepers": "3.59%",
+        "utcdt": "19-08-2026 17:24:17.000000",
+        "jutcdt": "1787245192178"
+      },
+      {
+        "msg": "quote",
+        "ticker": "USDRUB",
+        "bid": "83.6900",
+        "ask": "83.7070",
+        "netchange": "-1.27200",
+        "netchangepers": "-1.50%",
+        "utcdt": "19-08-2026 15:59:52.178428",
+        "jutcdt": "1787155192178"
+      },
+      {
+        "msg": "lastprice",
+        "ticker": "USDRUB",
+        "last": "83.6980",
+        "netchange": "-1.27200",
+        "netchangepers": "-1.50%",
+        "utcdt": "19-08-2026 15:59:52.178428",
+        "jutcdt": "1787155192178"
+      }
+    ]
+  }
+]

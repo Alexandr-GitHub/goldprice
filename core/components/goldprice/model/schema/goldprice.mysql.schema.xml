@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model package="goldprice" baseClass="xPDOObject" platform="mysql" defaultEngine="InnoDB" version="1.1">
+    <object class="GoldPriceGroup" table="goldprice_group" extends="xPDOSimpleObject">
+        <field key="weight" dbtype="decimal" precision="10,4" phptype="float" null="false" default="0" />
+        <field key="title" dbtype="varchar" precision="64" phptype="string" null="false" default="" />
+        <field key="sale_markup" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="sale_fix" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="buy_discount" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="buy_fix" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="price_step" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="stoploss" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="min_margin" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <index alias="weight" name="weight" primary="false" unique="false" type="BTREE">
+            <column key="weight" length="" collation="A" null="false" />
+        </index>
+    </object>
+
+    <object class="GoldPriceProduct" table="goldprice_product" extends="xPDOSimpleObject">
+        <field key="product_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" />
+        <field key="weight" dbtype="decimal" precision="10,4" phptype="float" null="false" default="0" />
+        <field key="metal" dbtype="varchar" precision="32" phptype="string" null="false" default="" />
+        <field key="coin_type" dbtype="varchar" precision="32" phptype="string" null="false" default="" />
+        <field key="group_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
+        <field key="use_custom" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="custom_pct" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="custom_buy_pct" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="custom_fix" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="custom_buy_fix" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="ignore_market" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="fixed_price" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="buyout_price" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <index alias="product_id" name="product_id" primary="false" unique="true" type="BTREE">
+            <column key="product_id" length="" collation="A" null="false" />
+        </index>
+        <aggregate alias="Group" class="GoldPriceGroup" local="group_id" foreign="id" cardinality="one" owner="foreign" />
+    </object>
+
+    <object class="GoldPriceQuote" table="goldprice_quote" extends="xPDOSimpleObject">
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="false" />
+        <field key="xau_usd" dbtype="decimal" precision="12,4" phptype="float" null="false" default="0" />
+        <field key="usd_rub" dbtype="decimal" precision="12,4" phptype="float" null="false" default="0" />
+        <field key="bid" dbtype="decimal" precision="12,4" phptype="float" null="false" default="0" />
+        <field key="ask" dbtype="decimal" precision="12,4" phptype="float" null="false" default="0" />
+        <field key="netchange_pct" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <field key="source" dbtype="varchar" precision="32" phptype="string" null="false" default="" />
+        <field key="raw" dbtype="text" phptype="string" null="true" />
+        <index alias="created_at" name="created_at" primary="false" unique="false" type="BTREE">
+            <column key="created_at" length="" collation="A" null="false" />
+        </index>
+    </object>
+
+    <object class="GoldPricePrice" table="goldprice_price" extends="xPDOSimpleObject">
+        <field key="product_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" />
+        <field key="group_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
+        <field key="cost" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="sale_price" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="buy_price" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="sale_calc" dbtype="text" phptype="string" null="true" />
+        <field key="buy_calc" dbtype="text" phptype="string" null="true" />
+        <field key="sale_frozen" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="buy_frozen" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="updated_at" dbtype="datetime" phptype="datetime" null="false" />
+        <index alias="product_id" name="product_id" primary="false" unique="true" type="BTREE">
+            <column key="product_id" length="" collation="A" null="false" />
+        </index>
+        <aggregate alias="Product" class="GoldPriceProduct" local="product_id" foreign="product_id" cardinality="one" owner="foreign" />
+        <aggregate alias="Group" class="GoldPriceGroup" local="group_id" foreign="id" cardinality="one" owner="foreign" />
+    </object>
+
+    <object class="GoldPriceState" table="goldprice_state" extends="xPDOSimpleObject">
+        <field key="group_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" />
+        <field key="mode" dbtype="varchar" precision="16" phptype="string" null="false" default="normal" />
+        <field key="started_at" dbtype="datetime" phptype="datetime" null="false" />
+        <field key="expires_at" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="change_pct" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
+        <index alias="group_id" name="group_id" primary="false" unique="true" type="BTREE">
+            <column key="group_id" length="" collation="A" null="false" />
+        </index>
+        <aggregate alias="Group" class="GoldPriceGroup" local="group_id" foreign="id" cardinality="one" owner="foreign" />
+    </object>
+
+    <object class="GoldPriceLog" table="goldprice_log" extends="xPDOSimpleObject">
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="false" />
+        <field key="event" dbtype="varchar" precision="64" phptype="string" null="false" default="" />
+        <field key="user_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
+        <field key="message" dbtype="text" phptype="string" null="true" />
+        <field key="data" dbtype="text" phptype="string" null="true" />
+        <index alias="created_at" name="created_at" primary="false" unique="false" type="BTREE">
+            <column key="created_at" length="" collation="A" null="false" />
+        </index>
+        <index alias="event" name="event" primary="false" unique="false" type="BTREE">
+            <column key="event" length="" collation="A" null="false" />
+        </index>
+    </object>
+
+    <object class="GoldPriceRequest" table="goldprice_request" extends="xPDOSimpleObject">
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="false" />
+        <field key="product_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" />
+        <field key="price" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="count" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false" default="1" />
+        <field key="amount" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="name" dbtype="varchar" precision="128" phptype="string" null="false" default="" />
+        <field key="phone" dbtype="varchar" precision="32" phptype="string" null="false" default="" />
+        <field key="email" dbtype="varchar" precision="128" phptype="string" null="false" default="" />
+        <field key="comment" dbtype="text" phptype="string" null="true" />
+        <field key="status" dbtype="varchar" precision="32" phptype="string" null="false" default="new" />
+        <field key="manager_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
+        <index alias="created_at" name="created_at" primary="false" unique="false" type="BTREE">
+            <column key="created_at" length="" collation="A" null="false" />
+        </index>
+        <index alias="status" name="status" primary="false" unique="false" type="BTREE">
+            <column key="status" length="" collation="A" null="false" />
+        </index>
+    </object>
+
+    <object class="GoldPriceRecipient" table="goldprice_recipient" extends="xPDOSimpleObject">
+        <field key="email" dbtype="varchar" precision="128" phptype="string" null="false" default="" />
+        <field key="name" dbtype="varchar" precision="128" phptype="string" null="false" default="" />
+        <field key="active" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="1" />
+        <field key="storm_on" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="storm_off" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="daily_limit" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="api_error" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <field key="new_request" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
+        <index alias="email" name="email" primary="false" unique="true" type="BTREE">
+            <column key="email" length="" collation="A" null="false" />
+        </index>
+    </object>
+</model>

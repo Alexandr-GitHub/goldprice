@@ -1,0 +1,10 @@
+vendor/
+composer.phar
+.phpunit.result.cache
+_build/build.config.php
+.DS_Store
+._*
+*.sql
+*.sql.gz
+core/cache/
+.env

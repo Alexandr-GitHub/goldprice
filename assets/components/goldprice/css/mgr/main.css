@@ -1,0 +1,15 @@
+.goldprice-product-panel {
+    padding: 15px 0;
+}
+.goldprice-product-panel .x-form-item {
+    margin-bottom: 12px;
+}
+.goldprice-product-panel .x-fieldset {
+    margin: 12px 0 16px;
+}
+#goldprice-product-tab {
+    overflow: auto;
+}
+.goldprice-settings-panel .x-fieldset {
+    margin-bottom: 16px;
+}

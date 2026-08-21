@@ -1,0 +1,6 @@
+<?php
+/**
+ * Copy to build.config.php (not versioned) and set paths to your local MODX install.
+ */
+define('MODX_BASE_PATH', '/path/to/modx/');
+define('MODX_CORE_PATH', MODX_BASE_PATH . 'core/');

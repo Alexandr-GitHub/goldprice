@@ -1,0 +1,27 @@
+[
+  {
+    "msg": "result",
+    "respCode": "0",
+    "message": [
+      {
+        "msg": "quote",
+        "ticker": "gold",
+        "bid": "4364.9000",
+        "ask": "4365.5600",
+        "netchange": "30.76000",
+        "netchangepers": "0.71%",
+        "utcdt": "19-08-2026 12:00:46.000000",
+        "jutcdt": "1787140846000"
+      },
+      {
+        "msg": "lastprice",
+        "ticker": "gold",
+        "last": "4365.2300",
+        "netchange": "30.70000",
+        "netchangepers": "0.71%",
+        "utcdt": "19-08-2026 12:00:46.000000",
+        "jutcdt": "1787140846000"
+      }
+    ]
+  }
+]
