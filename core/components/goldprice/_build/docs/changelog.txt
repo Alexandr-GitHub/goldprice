@@ -1,6 +1,13 @@
 GoldPrice Changelog
 ===================
 
+1.1.5-pl — 2026-09-14
+---------------------
+- Soft-delete for weight groups and subgroups (deleted_at); CMP Trash tab with restore and permanent delete.
+- Create root weight groups from CMP. Deleted groups excluded from pricing, storm, and product tab lists.
+- gpQuotes JSON: gold_usd, gold_usd2, stale, quote_stale, server_ts (storefront gold ticker).
+- Storefront snippets gpPrice, gpBuyoutForm, gpQuotes packed as static=1 (file on disk survives upgrade).
+
 1.1.4-pl — 2026-09-14
 ---------------------
 - Early migrate on namespace (parent_id before file copy).

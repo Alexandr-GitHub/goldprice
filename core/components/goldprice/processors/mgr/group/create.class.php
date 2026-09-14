@@ -1,6 +1,7 @@
 <?php
 
 use GoldPrice\Mgr\CmpFormat;
+use GoldPrice\Mgr\GroupTrash;
 
 class GoldPriceMgrGroupCreateProcessor extends modObjectCreateProcessor
 {
@@ -17,12 +18,43 @@ class GoldPriceMgrGroupCreateProcessor extends modObjectCreateProcessor
 
         $parentId = (int) $this->getProperty('parent_id', 0);
         if ($parentId <= 0) {
-            return $this->modx->lexicon('goldprice.err_group_parent');
+            return $this->beforeSetRoot();
         }
 
+        return $this->beforeSetSubgroup($parentId);
+    }
+
+    private function beforeSetRoot()
+    {
+        $title = trim((string) $this->getProperty('title', ''));
+        if ($title === '') {
+            return $this->modx->lexicon('goldprice.err_group_title');
+        }
+        $this->setProperty('title', $title);
+        $this->setProperty('parent_id', null);
+
+        $weight = CmpFormat::sanitizeNumber($this->getProperty('weight', 0));
+        if ($weight === null || (float) $weight <= 0) {
+            return $this->modx->lexicon('goldprice.err_group_weight');
+        }
+        $this->setProperty('weight', $weight);
+
+        foreach (['sale_markup', 'sale_fix', 'buy_discount', 'buy_fix', 'price_step', 'stoploss', 'min_margin'] as $field) {
+            $value = CmpFormat::sanitizeNumber($this->getProperty($field, 0));
+            if ($value === null) {
+                return $this->modx->lexicon('goldprice.err_group_number', ['field' => $field]);
+            }
+            $this->setProperty($field, $value);
+        }
+
+        return parent::beforeSet();
+    }
+
+    private function beforeSetSubgroup(int $parentId)
+    {
         /** @var GoldPriceGroup|null $parent */
         $parent = $this->modx->getObject('GoldPriceGroup', $parentId);
-        if (!$parent || (int) $parent->get('parent_id') > 0) {
+        if (!$parent || (int) $parent->get('parent_id') > 0 || GroupTrash::isDeleted($parent->toArray())) {
             return $this->modx->lexicon('goldprice.err_group_parent');
         }
 
@@ -52,12 +84,21 @@ class GoldPriceMgrGroupCreateProcessor extends modObjectCreateProcessor
     {
         $gp = $this->modx->goldprice;
         if ($gp) {
-            $gp->writeLog('group_subgroup_create', $this->modx->lexicon('goldprice.log_group_subgroup_create', [
-                'title' => (string) $this->object->get('title'),
-            ]), [
-                'id' => (int) $this->object->get('id'),
-                'parent_id' => (int) $this->object->get('parent_id'),
-            ]);
+            $isRoot = (int) $this->object->get('parent_id') <= 0;
+            if ($isRoot) {
+                $gp->writeLog('group_root_create', $this->modx->lexicon('goldprice.log_group_root_create', [
+                    'title' => (string) $this->object->get('title'),
+                ]), [
+                    'id' => (int) $this->object->get('id'),
+                ]);
+            } else {
+                $gp->writeLog('group_subgroup_create', $this->modx->lexicon('goldprice.log_group_subgroup_create', [
+                    'title' => (string) $this->object->get('title'),
+                ]), [
+                    'id' => (int) $this->object->get('id'),
+                    'parent_id' => (int) $this->object->get('parent_id'),
+                ]);
+            }
             $this->setProperty('_recalc', $gp->recalculatePrices());
         }
 

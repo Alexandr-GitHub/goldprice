@@ -36,6 +36,16 @@ GoldPrice.panel.Home = function (config) {
                     cls: 'main-wrapper'
                 }]
             }, {
+                title: _('goldprice.tab_trash'),
+                id: 'goldprice-tab-trash',
+                items: [{
+                    html: '<p>' + _('goldprice.tab_trash_intro') + '</p>',
+                    cls: 'panel-desc'
+                }, {
+                    xtype: 'goldprice-grid-group-trash',
+                    cls: 'main-wrapper'
+                }]
+            }, {
                 title: _('goldprice.tab_prices'),
                 id: 'goldprice-tab-prices',
                 items: [{

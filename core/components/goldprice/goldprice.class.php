@@ -320,6 +320,7 @@ class GoldPrice
     {
         $out = [];
         $q = $this->modx->newQuery('GoldPriceGroup');
+        $q->where(['deleted_at:IS' => null]);
         $q->sortby('weight', 'ASC');
         /** @var GoldPriceGroup[] $rows */
         $rows = $this->modx->getCollection('GoldPriceGroup', $q);

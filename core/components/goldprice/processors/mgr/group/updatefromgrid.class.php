@@ -1,6 +1,7 @@
 <?php
 
 use GoldPrice\Mgr\CmpFormat;
+use GoldPrice\Mgr\GroupTrash;
 
 class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
 {
@@ -30,6 +31,10 @@ class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
 
     public function beforeSet()
     {
+        if (GroupTrash::isDeleted($this->object->toArray())) {
+            return $this->modx->lexicon('goldprice.err_group_deleted');
+        }
+
         $this->before = $this->object->toArray();
         $isSubgroup = (int) $this->object->get('parent_id') > 0;
 

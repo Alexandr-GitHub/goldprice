@@ -2,7 +2,7 @@
 
 use GoldPrice\Mgr\GroupTrash;
 
-class GoldPriceMgrGroupRemoveProcessor extends modProcessor
+class GoldPriceMgrGroupRestoreProcessor extends modProcessor
 {
     public $languageTopics = ['goldprice:default'];
     public $permission = 'settings';
@@ -20,8 +20,17 @@ class GoldPriceMgrGroupRemoveProcessor extends modProcessor
         if (!$object) {
             return $this->failure($this->modx->lexicon('object_not_found'));
         }
-        if (GroupTrash::isDeleted($object->toArray())) {
-            return $this->failure($this->modx->lexicon('goldprice.err_group_deleted'));
+        if (!GroupTrash::isDeleted($object->toArray())) {
+            return $this->failure($this->modx->lexicon('goldprice.err_group_not_deleted'));
+        }
+
+        $parentId = (int) $object->get('parent_id');
+        if ($parentId > 0) {
+            /** @var GoldPriceGroup|null $parent */
+            $parent = $this->modx->getObject('GoldPriceGroup', $parentId);
+            if (!$parent || GroupTrash::isDeleted($parent->toArray())) {
+                return $this->failure($this->modx->lexicon('goldprice.err_group_parent_deleted'));
+            }
         }
 
         $allById = [];
@@ -29,29 +38,25 @@ class GoldPriceMgrGroupRemoveProcessor extends modProcessor
             $allById[(int) $group->get('id')] = $group->toArray();
         }
 
-        $plan = GroupTrash::planSoftDelete($object->toArray(), $allById);
-        GroupTrash::applyProductMoves($this->modx, $plan['productMoves']);
-
-        $now = date('Y-m-d H:i:s');
-        foreach ($plan['softIds'] as $groupId) {
+        $restoreIds = GroupTrash::planRestore($object->toArray(), $allById);
+        foreach ($restoreIds as $groupId) {
             /** @var GoldPriceGroup|null $row */
             $row = $this->modx->getObject('GoldPriceGroup', $groupId);
             if ($row) {
-                $row->set('deleted_at', $now);
+                $row->set('deleted_at', null);
                 $row->save();
             }
         }
 
         $title = (string) $object->get('title');
-        $isRoot = (int) $object->get('parent_id') <= 0;
         $gp = $this->modx->goldprice;
         $summary = null;
         if ($gp) {
-            $event = $isRoot ? 'group_root_remove' : 'group_subgroup_remove';
-            $lex = $isRoot ? 'goldprice.log_group_root_remove' : 'goldprice.log_group_subgroup_remove';
-            $gp->writeLog($event, $this->modx->lexicon($lex, ['title' => $title]), [
+            $gp->writeLog('group_restore', $this->modx->lexicon('goldprice.log_group_restore', [
+                'title' => $title,
+            ]), [
                 'id' => $id,
-                'soft_ids' => $plan['softIds'],
+                'restore_ids' => $restoreIds,
             ]);
             $summary = $gp->recalculatePrices();
         }
@@ -66,4 +71,4 @@ class GoldPriceMgrGroupRemoveProcessor extends modProcessor
     }
 }
 
-return 'GoldPriceMgrGroupRemoveProcessor';
+return 'GoldPriceMgrGroupRestoreProcessor';

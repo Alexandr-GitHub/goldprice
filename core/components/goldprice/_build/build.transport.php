@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.1.4');
+define('PKG_VERSION', '1.1.5');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -159,7 +159,9 @@ foreach (array('gpPrice', 'gpBuyoutForm', 'gpQuotes') as $snippetName) {
             1
         ),
         'cacheable' => 0,
-        'static' => 0,
+        'static' => 1,
+        'static_file' => 'core/components/goldprice/elements/snippets/' . $snippetName . '.php',
+        'source' => 0,
     ), '', true, true);
     $builder->putVehicle($builder->createVehicle($snippet, array(
         xPDOTransport::UNIQUE_KEY => 'name',

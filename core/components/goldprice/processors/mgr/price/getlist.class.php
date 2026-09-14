@@ -28,6 +28,7 @@ class GoldPriceMgrPriceGetListProcessor extends modObjectGetListProcessor
         if ($groupFilter > 0) {
             $ids = [$groupFilter];
             $childQuery = $this->modx->newQuery('GoldPriceGroup', ['parent_id' => $groupFilter]);
+            $childQuery->where(['deleted_at:IS' => null]);
             foreach ($this->modx->getCollection('GoldPriceGroup', $childQuery) as $child) {
                 $ids[] = (int) $child->get('id');
             }

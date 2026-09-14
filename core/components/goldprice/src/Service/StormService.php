@@ -58,6 +58,9 @@ final class StormService
         }
 
         foreach ($this->modx->getCollection('GoldPriceGroup') as $group) {
+            if ($group->get('deleted_at')) {
+                continue;
+            }
             if ((int) $group->get('parent_id') > 0) {
                 continue;
             }

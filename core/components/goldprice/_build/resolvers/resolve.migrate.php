@@ -33,6 +33,12 @@ if (!function_exists('goldpriceMigrateRawColumns')) {
                 'index' => 'parent_id',
             ),
             array(
+                'table' => $prefix . 'goldprice_group',
+                'column' => 'deleted_at',
+                'definition' => '`deleted_at` datetime NULL DEFAULT NULL',
+                'index' => null,
+            ),
+            array(
                 'table' => $prefix . 'goldprice_product',
                 'column' => 'custom_buy_fix',
                 'definition' => '`custom_buy_fix` decimal(12,2) NOT NULL DEFAULT 0',

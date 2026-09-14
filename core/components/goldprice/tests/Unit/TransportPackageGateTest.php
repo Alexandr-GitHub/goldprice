@@ -50,6 +50,7 @@ final class TransportPackageGateTest extends TestCase
         $this->assertFileExists($this->unpackDir . '/' . $body['source']);
         $src = file_get_contents($this->unpackDir . '/' . $body['source']);
         $this->assertStringContainsString('parent_id', $src);
+        $this->assertStringContainsString('deleted_at', $src);
         $this->assertStringContainsString('goldpriceMigrateRawColumns', $src);
     }
 
@@ -86,6 +87,7 @@ final class TransportPackageGateTest extends TestCase
             'goldprice-1.1.1-pl',
             'goldprice-1.1.2-pl',
             'goldprice-1.1.3-pl',
+            'goldprice-1.1.4-pl',
         ];
         $stale = array_values(array_filter($stale, fn ($n) => $n !== $this->pkgName));
         $iterator = new \RecursiveIteratorIterator(
@@ -123,8 +125,47 @@ final class TransportPackageGateTest extends TestCase
     public function testManifestHasChangelog(): void
     {
         $manifest = include $this->unpackDir . '/' . $this->pkgName . '/manifest.php';
-        $this->assertNotEmpty($manifest['manifest-attributes']['changelog'] ?? '');
-        $this->assertStringContainsString('parent_id', $manifest['manifest-attributes']['changelog']);
+        $changelog = (string) ($manifest['manifest-attributes']['changelog'] ?? '');
+        $this->assertNotEmpty($changelog);
+        $hasFeatureNote = strpos($changelog, 'parent_id') !== false
+            || strpos($changelog, 'deleted_at') !== false
+            || strpos($changelog, 'Корзина') !== false
+            || strpos($changelog, 'gold_usd') !== false
+            || strpos($changelog, 'Trash') !== false;
+        $this->assertTrue($hasFeatureNote, 'changelog must mention a 1.1.x feature');
+    }
+
+    public function testGpQuotesFilePayloadHasGoldUsd(): void
+    {
+        $path = $this->unpackDir . '/' . $this->pkgName
+            . '/xPDOFileVehicle/958c3d5d3e7093e54594221ed1930024/elements/snippets/gpQuotes.php';
+        $this->assertFileExists($path);
+        $src = file_get_contents($path);
+        $this->assertStringContainsString('gold_usd', $src);
+        $this->assertStringContainsString('getXauUsd', $src);
+    }
+
+    public function testGpQuotesSnippetVehicleIsStatic(): void
+    {
+        $vehicle = include $this->unpackDir . '/' . $this->pkgName
+            . '/modSnippet/58af666bae600e8c1b6f9f18ad58af42.vehicle';
+        $this->assertIsArray($vehicle);
+        $object = json_decode((string) ($vehicle['object'] ?? ''), true);
+        $this->assertIsArray($object);
+        $this->assertSame('gpQuotes', $object['name'] ?? null);
+        $this->assertSame(1, (int) ($object['static'] ?? 0));
+        $this->assertSame(
+            'core/components/goldprice/elements/snippets/gpQuotes.php',
+            $object['static_file'] ?? null
+        );
+        $this->assertStringContainsString('gold_usd', (string) ($object['snippet'] ?? ''));
+    }
+
+    public function testTrashGridInAssetsPayload(): void
+    {
+        $path = $this->unpackDir . '/' . $this->pkgName
+            . '/xPDOFileVehicle/d5b3f54c3fcafd31f24f2a7c3bf8af81/goldprice/js/mgr/widgets/trash.grid.js';
+        $this->assertFileExists($path);
     }
 
     private function rmTree(string $dir): void

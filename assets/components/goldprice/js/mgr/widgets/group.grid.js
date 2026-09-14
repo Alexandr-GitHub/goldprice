@@ -75,8 +75,12 @@ GoldPrice.grid.Groups = function (config) {
             editor: { xtype: 'numberfield', decimalPrecision: 2 }
         }],
         tbar: [{
-            text: _('goldprice.group_subgroup_create'),
+            text: _('goldprice.group_root_create'),
             cls: 'primary-button',
+            handler: this.createRoot,
+            scope: this
+        }, '-', {
+            text: _('goldprice.group_subgroup_create'),
             handler: this.createSubgroup,
             scope: this
         }]
@@ -86,12 +90,12 @@ GoldPrice.grid.Groups = function (config) {
 Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
     inheritedFields: ['weight', 'price_step', 'stoploss', 'min_margin'],
     getMenu: function () {
-        if (!this.menu.record || !this.menu.record.get('parent_id')) {
+        if (!this.menu.record) {
             return [];
         }
         return [{
-            text: _('goldprice.group_subgroup_remove'),
-            handler: this.removeSubgroup
+            text: _('goldprice.group_remove'),
+            handler: this.removeGroup
         }];
     },
     beforeedit: function (e) {
@@ -99,6 +103,17 @@ Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
             return false;
         }
         return GoldPrice.grid.Groups.superclass.beforeedit.call(this, e);
+    },
+    createRoot: function () {
+        var w = MODx.load({
+            xtype: 'goldprice-window-group-root',
+            baseParams: { action: 'mgr/group/create' },
+            listeners: {
+                success: { fn: this.refresh, scope: this }
+            }
+        });
+        w.reset();
+        w.show();
     },
     createSubgroup: function () {
         var w = MODx.load({
@@ -111,10 +126,13 @@ Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
         w.reset();
         w.show();
     },
-    removeSubgroup: function () {
+    removeGroup: function () {
+        var isSubgroup = !!this.menu.record.get('parent_id');
         MODx.msg.confirm({
-            title: _('goldprice.group_subgroup_remove'),
-            text: _('goldprice.group_subgroup_remove_confirm'),
+            title: _('goldprice.group_remove'),
+            text: isSubgroup
+                ? _('goldprice.group_subgroup_remove_confirm')
+                : _('goldprice.group_root_remove_confirm'),
             url: this.config.url,
             params: {
                 action: 'mgr/group/remove',

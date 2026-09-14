@@ -21,6 +21,13 @@ class GoldPriceMgrGroupGetListProcessor extends modObjectGetListProcessor
             $this->titleById[(int) $object->get('id')] = (string) $object->get('title');
         }
 
+        $trash = (int) $this->getProperty('trash', 0);
+        if ($trash === 1) {
+            $c->where(['deleted_at:IS NOT' => null]);
+        } else {
+            $c->where(['deleted_at:IS' => null]);
+        }
+
         return parent::prepareQueryBeforeCount($c);
     }
 

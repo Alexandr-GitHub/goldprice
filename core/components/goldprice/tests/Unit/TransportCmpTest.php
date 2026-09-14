@@ -24,6 +24,18 @@ final class TransportCmpTest extends TestCase
         $this->assertStringContainsString("'gpPrice', 'gpBuyoutForm', 'gpQuotes'", $build);
     }
 
+    public function testStorefrontSnippetsPackedAsStatic(): void
+    {
+        $build = file_get_contents(dirname(__DIR__, 2) . '/_build/build.transport.php');
+        $this->assertNotFalse($build);
+        $this->assertStringContainsString("'static' => 1,", $build);
+        $this->assertStringContainsString(
+            "'static_file' => 'core/components/goldprice/elements/snippets/' . \$snippetName . '.php'",
+            $build
+        );
+        $this->assertStringContainsString("'source' => 0,", $build);
+    }
+
     public function testProcessorsReturnClassNames(): void
     {
         $root = dirname(__DIR__, 2) . '/processors/mgr';

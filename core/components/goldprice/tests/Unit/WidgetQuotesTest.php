@@ -41,6 +41,27 @@ final class WidgetQuotesTest extends TestCase
         $this->assertSame(number_format($direct->getNetchangeUsd(), 4, '.', ''), $payload['usd2']);
     }
 
+    public function testGpQuotesSnippetSourceContainsGoldUsdContract(): void
+    {
+        $src = file_get_contents(dirname(__DIR__, 2) . '/elements/snippets/gpQuotes.php');
+        $this->assertNotFalse($src);
+        $this->assertStringContainsString('gold_usd', $src);
+        $this->assertStringContainsString('getXauUsd', $src);
+        $this->assertStringContainsString('getNetchangeGold', $src);
+        $this->assertStringContainsString('quote_stale', $src);
+        $this->assertStringContainsString('server_ts', $src);
+    }
+
+    public function testGpQuotesRatesExtrasFromFixtureQuote(): void
+    {
+        $raw = $this->fixture('profinance_ok.json');
+        $quote = (new ProfinanceResponseParser(['gold', 'USDRUB']))
+            ->parse($raw, PHP_INT_MAX, PHP_INT_MAX, self::FIXTURE_TS);
+
+        $this->assertSame('4365.23', number_format($quote->getXauUsd(), 2, '.', ''));
+        $this->assertSame('30.70', number_format($quote->getNetchangeGold(), 2, '.', ''));
+    }
+
     public function testFromRowWithoutRawUsesColumnsAndZeroDeltas(): void
     {
         $quote = Quote::fromRow([

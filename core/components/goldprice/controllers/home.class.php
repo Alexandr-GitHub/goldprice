@@ -36,6 +36,7 @@ class GoldpriceHomeManagerController extends GoldpriceManagerController
         $this->addLastJavascript($jsUrl . 'widgets/quote.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/group.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/group.window.js');
+        $this->addLastJavascript($jsUrl . 'widgets/trash.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/price.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/settings.panel.js');
         $this->addLastJavascript($jsUrl . 'widgets/recipient.window.js');

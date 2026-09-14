@@ -45,7 +45,9 @@ final class PriceRecalculator
         }
 
         $productObjects = $this->modx->getCollection('GoldPriceProduct');
-        $groupObjects = $this->modx->getCollection('GoldPriceGroup');
+        $groupQuery = $this->modx->newQuery('GoldPriceGroup');
+        $groupQuery->where(['deleted_at:IS' => null]);
+        $groupObjects = $this->modx->getCollection('GoldPriceGroup', $groupQuery);
         $priceObjects = $this->modx->getCollection('GoldPricePrice');
 
         $products = [];
