@@ -13,9 +13,10 @@ final class ProductDataValidator
     /**
      * @param array $input raw form fields
      * @param int[] $allowedGroupIds
+     * @param array<int,int> $parentById subgroup id => root id
      * @return array{ok:bool,errors:string[],data:array}
      */
-    public static function validate(array $input, array $allowedGroupIds)
+    public static function validate(array $input, array $allowedGroupIds, array $parentById = [])
     {
         $errors = [];
         $data = [
@@ -60,18 +61,36 @@ final class ProductDataValidator
             }
         }
 
+        $allowed = array_map('intval', $allowedGroupIds);
+        $weightGroupId = null;
         $groupRaw = isset($input['group_id']) ? $input['group_id'] : '';
-        if ($groupRaw === '' || $groupRaw === null || (string) $groupRaw === '0') {
-            $data['group_id'] = null;
-        } else {
+        if ($groupRaw !== '' && $groupRaw !== null && (string) $groupRaw !== '0') {
             $gid = (int) $groupRaw;
-            $allowed = array_map('intval', $allowedGroupIds);
             if (!in_array($gid, $allowed, true)) {
                 $errors[] = 'Указана неизвестная весовая группа.';
+            } elseif (isset($parentById[$gid])) {
+                $errors[] = 'Указана неизвестная весовая группа.';
             } else {
-                $data['group_id'] = $gid;
+                $weightGroupId = $gid;
             }
         }
+
+        $subgroupId = null;
+        $subgroupRaw = isset($input['subgroup_id']) ? $input['subgroup_id'] : '';
+        if ($subgroupRaw !== '' && $subgroupRaw !== null && (string) $subgroupRaw !== '0') {
+            $sid = (int) $subgroupRaw;
+            if (!in_array($sid, $allowed, true)) {
+                $errors[] = 'Указана неизвестная подгруппа.';
+            } elseif (!isset($parentById[$sid])) {
+                $errors[] = 'Указана неизвестная подгруппа.';
+            } elseif ($weightGroupId === null || $parentById[$sid] !== $weightGroupId) {
+                $errors[] = 'Подгруппа не относится к выбранной весовой группе.';
+            } else {
+                $subgroupId = $sid;
+            }
+        }
+
+        $data['group_id'] = $subgroupId ?? $weightGroupId;
 
         $data['use_custom'] = self::toBool(isset($input['use_custom']) ? $input['use_custom'] : 0);
         $data['ignore_market'] = self::toBool(isset($input['ignore_market']) ? $input['ignore_market'] : 0);

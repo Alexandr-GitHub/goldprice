@@ -35,6 +35,18 @@ if ($transport->xpdo) {
         }
 
         // createObjectContainer does not add columns to an existing table
+        $groupTable = $modx->getTableName('GoldPriceGroup');
+        if ($groupTable) {
+            $stmt = $modx->query("SHOW COLUMNS FROM {$groupTable} LIKE 'parent_id'");
+            $exists = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+            if (!$exists) {
+                $sql = "ALTER TABLE {$groupTable} ADD COLUMN `parent_id` int(10) unsigned NULL DEFAULT NULL AFTER `min_margin`, ADD KEY `parent_id` (`parent_id`)";
+                if ($modx->exec($sql) === false) {
+                    $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] Failed to add parent_id column');
+                }
+            }
+        }
+
         $productTable = $modx->getTableName('GoldPriceProduct');
         if ($productTable) {
             $stmt = $modx->query("SHOW COLUMNS FROM {$productTable} LIKE 'custom_buy_fix'");

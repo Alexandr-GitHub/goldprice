@@ -25,12 +25,16 @@ final class GroupParams
     /** @var float minimum sale − buy gap in rubles */
     private $minMargin;
 
+    /** @var string e.g. подгруппы «Кенгуру»; empty for root */
+    private $label;
+
     private function __construct(
         float $saleMarkupPct,
         float $saleFix,
         float $buyDiscountPct,
         float $buyFix,
-        float $minMargin
+        float $minMargin,
+        string $label = ''
     ) {
         if ($minMargin < 0) {
             throw new \InvalidArgumentException('min_margin cannot be negative');
@@ -41,6 +45,37 @@ final class GroupParams
         $this->buyDiscountPct = $buyDiscountPct;
         $this->buyFix = $buyFix;
         $this->minMargin = $minMargin;
+        $this->label = $label;
+    }
+
+    /**
+     * @param array $row goldprice_group row (xPDO toArray or seed array)
+     * @param array|null $parentRow root group row when $row is a subgroup
+     */
+    public static function resolve(array $row, ?array $parentRow): self
+    {
+        if ($parentRow === null) {
+            return new self(
+                self::float($row, 'sale_markup'),
+                self::float($row, 'sale_fix'),
+                self::float($row, 'buy_discount'),
+                self::float($row, 'buy_fix'),
+                self::float($row, 'min_margin'),
+                ''
+            );
+        }
+
+        $title = trim((string) ($row['title'] ?? ''));
+        $label = $title !== '' ? 'подгруппы «' . $title . '»' : 'подгруппы';
+
+        return new self(
+            self::float($parentRow, 'sale_markup') + self::float($row, 'sale_markup'),
+            self::float($parentRow, 'sale_fix') + self::float($row, 'sale_fix'),
+            self::float($parentRow, 'buy_discount') + self::float($row, 'buy_discount'),
+            self::float($parentRow, 'buy_fix') + self::float($row, 'buy_fix'),
+            self::float($parentRow, 'min_margin'),
+            $label
+        );
     }
 
     /**
@@ -48,13 +83,7 @@ final class GroupParams
      */
     public static function fromRow(array $row): self
     {
-        return new self(
-            self::float($row, 'sale_markup'),
-            self::float($row, 'sale_fix'),
-            self::float($row, 'buy_discount'),
-            self::float($row, 'buy_fix'),
-            self::float($row, 'min_margin')
-        );
+        return self::resolve($row, null);
     }
 
     public function getSaleMarkupPct(): float
@@ -80,6 +109,11 @@ final class GroupParams
     public function getMinMargin(): float
     {
         return $this->minMargin;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
     }
 
     private static function float(array $row, string $key): float

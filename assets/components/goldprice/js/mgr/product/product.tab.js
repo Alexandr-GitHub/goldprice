@@ -9,9 +9,26 @@ Ext.override(miniShop2.panel.Product, {
         var data = (GoldPrice.config && GoldPrice.config.product) ? GoldPrice.config.product : {};
         var groups = (GoldPrice.config && GoldPrice.config.groups) ? GoldPrice.config.groups : [];
 
-        var groupData = [['0', _('goldprice.group_auto')]];
+        var rootGroups = [];
+        var subgroupsByParent = {};
         for (var i = 0; i < groups.length; i++) {
-            groupData.push([String(groups[i].id), groups[i].title + ' (' + groups[i].weight + ' г)']);
+            if (groups[i].parent_id) {
+                var pid = String(groups[i].parent_id);
+                if (!subgroupsByParent[pid]) {
+                    subgroupsByParent[pid] = [];
+                }
+                subgroupsByParent[pid].push(groups[i]);
+            } else {
+                rootGroups.push(groups[i]);
+            }
+        }
+
+        var groupData = [['0', _('goldprice.group_auto')]];
+        for (var r = 0; r < rootGroups.length; r++) {
+            groupData.push([
+                String(rootGroups[r].id),
+                rootGroups[r].title + ' (' + rootGroups[r].weight + ' г)'
+            ]);
         }
 
         var metalData = [
@@ -26,6 +43,7 @@ Ext.override(miniShop2.panel.Product, {
         ];
 
         var groupId = data.group_id ? String(data.group_id) : '0';
+        var subgroupId = data.subgroup_id ? String(data.subgroup_id) : '0';
 
         var mkCombo = function (name, id, label, storeData, value, description) {
             return {
@@ -50,6 +68,16 @@ Ext.override(miniShop2.panel.Product, {
                 value: value
             };
         };
+
+        var subgroupStoreData = [['0', '—']];
+        var rebuildSubgroupStore = function (parentId) {
+            subgroupStoreData = [['0', '—']];
+            var list = subgroupsByParent[String(parentId)] || [];
+            for (var s = 0; s < list.length; s++) {
+                subgroupStoreData.push([String(list[s].id), list[s].title]);
+            }
+        };
+        rebuildSubgroupStore(groupId);
 
         for (var fi in fields) {
             if (!fields.hasOwnProperty(fi)) {
@@ -95,7 +123,38 @@ Ext.override(miniShop2.panel.Product, {
                         },
                         mkCombo('goldprice[metal]', 'goldprice-metal', _('goldprice.field_metal'), metalData, data.metal || ''),
                         mkCombo('goldprice[coin_type]', 'goldprice-coin-type', _('goldprice.field_coin_type'), coinData, data.coin_type || ''),
-                        mkCombo('goldprice[group_id]', 'goldprice-group-id', _('goldprice.field_group'), groupData, groupId, _('goldprice.field_group_help')),
+                        (function () {
+                            var weightCombo = mkCombo(
+                                'goldprice[group_id]',
+                                'goldprice-group-id',
+                                _('goldprice.field_group'),
+                                groupData,
+                                groupId,
+                                _('goldprice.field_group_help')
+                            );
+                            weightCombo.listeners = {
+                                select: {
+                                    fn: function (combo) {
+                                        var subgroupCombo = Ext.getCmp('goldprice-subgroup-id');
+                                        if (!subgroupCombo) {
+                                            return;
+                                        }
+                                        rebuildSubgroupStore(combo.getValue());
+                                        subgroupCombo.getStore().loadData(subgroupStoreData);
+                                        subgroupCombo.setValue('0');
+                                    }
+                                }
+                            };
+                            return weightCombo;
+                        })(),
+                        mkCombo(
+                            'goldprice[subgroup_id]',
+                            'goldprice-subgroup-id',
+                            _('goldprice.field_subgroup'),
+                            subgroupStoreData,
+                            subgroupId,
+                            _('goldprice.field_subgroup_help')
+                        ),
                         {
                             xtype: 'fieldset',
                             title: _('goldprice.fieldset_custom'),

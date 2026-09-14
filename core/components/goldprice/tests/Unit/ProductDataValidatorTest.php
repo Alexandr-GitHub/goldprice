@@ -154,4 +154,48 @@ final class ProductDataValidatorTest extends TestCase
 
         $this->assertFalse($result['ok']);
     }
+
+    public function testSubgroupOfWrongWeightGroupRejected(): void
+    {
+        $parentById = [10 => 3, 11 => 4];
+
+        $result = ProductDataValidator::validate([
+            'weight' => '7.78',
+            'metal' => 'золото',
+            'coin_type' => '',
+            'group_id' => '4',
+            'subgroup_id' => '10',
+            'use_custom' => '0',
+            'custom_pct' => '0',
+            'custom_fix' => '0',
+            'ignore_market' => '0',
+            'fixed_price' => '0',
+            'buyout_price' => '0',
+        ], [1, 2, 3, 4, 10, 11], $parentById);
+
+        $this->assertFalse($result['ok']);
+        $this->assertStringContainsString('Подгруппа', implode(' ', $result['errors']));
+    }
+
+    public function testSubgroupCollapsesToStoredGroupId(): void
+    {
+        $parentById = [10 => 3];
+
+        $result = ProductDataValidator::validate([
+            'weight' => '7.78',
+            'metal' => 'золото',
+            'coin_type' => '',
+            'group_id' => '3',
+            'subgroup_id' => '10',
+            'use_custom' => '0',
+            'custom_pct' => '0',
+            'custom_fix' => '0',
+            'ignore_market' => '0',
+            'fixed_price' => '0',
+            'buyout_price' => '0',
+        ], [1, 2, 3, 4, 10], $parentById);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame(10, $result['data']['group_id']);
+    }
 }

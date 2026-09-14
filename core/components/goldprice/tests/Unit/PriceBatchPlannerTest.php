@@ -394,6 +394,89 @@ final class PriceBatchPlannerTest extends TestCase
         $this->assertSame(0, $result['frozen_sale']);
     }
 
+    public function testProductInSubgroupUsesParentStepAndStorm(): void
+    {
+        $groups = [
+            3 => [
+                'id' => 3,
+                'parent_id' => null,
+                'sale_markup' => 12,
+                'sale_fix' => 200,
+                'buy_discount' => 12,
+                'buy_fix' => 300,
+                'price_step' => 200,
+                'min_margin' => 0,
+            ],
+            10 => [
+                'id' => 10,
+                'parent_id' => 3,
+                'title' => 'Кенгуру',
+                'sale_markup' => 2,
+                'sale_fix' => 0,
+                'buy_discount' => 0,
+                'buy_fix' => 0,
+                'price_step' => 0,
+                'min_margin' => 0,
+            ],
+        ];
+
+        $plain = PriceBatchPlanner::plan(
+            $this->quote(1700000000),
+            [['product_id' => 26, 'weight' => 7.78, 'group_id' => 10]],
+            $groups,
+            [],
+            0.0,
+            900,
+            86400,
+            1700000000
+        );
+        $this->assertSame(14.0, $this->markupPctFromSaleCalc($plain['prices'][26]['sale_calc']));
+
+        $held = PriceBatchPlanner::plan(
+            $this->quote(1700000000),
+            [['product_id' => 26, 'weight' => 7.78, 'group_id' => 10]],
+            $groups,
+            [26 => $plain['prices'][26]],
+            0.0,
+            900,
+            86400,
+            1700000000
+        );
+        $this->assertSame(1, $held['held'], 'parent price_step=200 should damp identical rerun');
+
+        $storm = PriceBatchPlanner::plan(
+            $this->quote(1700000000),
+            [['product_id' => 26, 'weight' => 7.78, 'group_id' => 10]],
+            $groups,
+            [26 => [
+                'product_id' => 26,
+                'sale_price' => '999999.00',
+                'buy_price' => '150000.00',
+                'sale_frozen' => 0,
+                'buy_frozen' => 0,
+            ]],
+            0.0,
+            900,
+            86400,
+            1700000000,
+            [3 => ['sale' => true, 'buy' => false, 'reason' => 'Шторм (обвал рынка): продажа приостановлена']]
+        );
+
+        $row = $storm['prices'][26];
+        $this->assertSame('999999.00', $row['sale_price']);
+        $this->assertSame(1, $row['sale_frozen']);
+        $this->assertStringContainsString('подгруппы «Кенгуру»', $plain['prices'][26]['sale_calc']);
+    }
+
+    private function markupPctFromSaleCalc(string $calc): float
+    {
+        if (!preg_match('/(\d+(?:\.\d+)?)%/', $calc, $m)) {
+            $this->fail('Could not parse markup percent from: ' . $calc);
+        }
+
+        return (float) $m[1];
+    }
+
     private function quote(int $timestamp): Quote
     {
         return new Quote(2300.0, 90.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, $timestamp, $timestamp, '');

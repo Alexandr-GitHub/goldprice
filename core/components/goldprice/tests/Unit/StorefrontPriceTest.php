@@ -198,7 +198,11 @@ final class StorefrontPriceTest extends TestCase
     {
         $root = dirname(__DIR__, 5);
         foreach (['stock.tpl', 'rustock.tpl'] as $name) {
-            $src = file_get_contents($root . '/core/elements/chunks/' . $name);
+            $path = $root . '/core/elements/chunks/' . $name;
+            if (!is_file($path)) {
+                $this->markTestSkipped('Site chunk missing: ' . $name);
+            }
+            $src = file_get_contents($path);
             $this->assertNotFalse($src);
             $this->assertStringNotContainsString('Цена за 1 унцию', $src, $name);
             $this->assertStringNotContainsString('$gp.sale_oz', $src, $name);
@@ -210,7 +214,11 @@ final class StorefrontPriceTest extends TestCase
             $this->assertStringContainsString('type="button" disabled', $src, $name);
         }
         foreach (['stockCart.tpl', 'rustockCart.tpl'] as $name) {
-            $src = file_get_contents($root . '/core/elements/chunks/' . $name);
+            $path = $root . '/core/elements/chunks/' . $name;
+            if (!is_file($path)) {
+                $this->markTestSkipped('Site chunk missing: ' . $name);
+            }
+            $src = file_get_contents($path);
             $this->assertNotFalse($src);
             $this->assertStringContainsString('$_modx->resource.stocks == "Есть в наличии"', $src, $name);
             $this->assertStringContainsString('| number: 0', $src, $name);

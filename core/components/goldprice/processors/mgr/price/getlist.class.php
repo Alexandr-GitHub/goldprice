@@ -24,6 +24,16 @@ class GoldPriceMgrPriceGetListProcessor extends modObjectGetListProcessor
             ]);
         }
 
+        $groupFilter = (int) $this->getProperty('group_id', 0);
+        if ($groupFilter > 0) {
+            $ids = [$groupFilter];
+            $childQuery = $this->modx->newQuery('GoldPriceGroup', ['parent_id' => $groupFilter]);
+            foreach ($this->modx->getCollection('GoldPriceGroup', $childQuery) as $child) {
+                $ids[] = (int) $child->get('id');
+            }
+            $c->where(['GoldPricePrice.group_id:IN' => $ids]);
+        }
+
         return $c;
     }
 

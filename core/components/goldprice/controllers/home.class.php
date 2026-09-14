@@ -23,6 +23,7 @@ class GoldpriceHomeManagerController extends GoldpriceManagerController
         $config = [
             'connector_url' => $this->goldprice->config['connector_url'],
             'assets_url' => $this->goldprice->config['assets_url'],
+            'groups' => $this->goldprice->getGroupsList(),
         ];
 
         $this->addCss($this->goldprice->config['css_url'] . 'mgr/main.css');
@@ -34,6 +35,7 @@ class GoldpriceHomeManagerController extends GoldpriceManagerController
         $jsUrl = $this->goldprice->config['js_url'] . 'mgr/';
         $this->addLastJavascript($jsUrl . 'widgets/quote.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/group.grid.js');
+        $this->addLastJavascript($jsUrl . 'widgets/group.window.js');
         $this->addLastJavascript($jsUrl . 'widgets/price.grid.js');
         $this->addLastJavascript($jsUrl . 'widgets/settings.panel.js');
         $this->addLastJavascript($jsUrl . 'widgets/recipient.window.js');

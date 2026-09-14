@@ -19,6 +19,7 @@ $xpdo_meta_map['GoldPriceGroup']= array (
     'price_step' => 0.0,
     'stoploss' => 0.0,
     'min_margin' => 0.0,
+    'parent_id' => null,
   ),
   'fieldMeta' => 
   array (
@@ -94,6 +95,25 @@ $xpdo_meta_map['GoldPriceGroup']= array (
       'null' => false,
       'default' => 0.0,
     ),
+    'parent_id' => 
+    array (
+      'dbtype' => 'int',
+      'precision' => '10',
+      'attributes' => 'unsigned',
+      'phptype' => 'integer',
+      'null' => true,
+    ),
+  ),
+  'aggregates' => 
+  array (
+    'Parent' => 
+    array (
+      'class' => 'GoldPriceGroup',
+      'local' => 'parent_id',
+      'foreign' => 'id',
+      'cardinality' => 'one',
+      'owner' => 'foreign',
+    ),
   ),
   'indexes' => 
   array (
@@ -106,6 +126,22 @@ $xpdo_meta_map['GoldPriceGroup']= array (
       'columns' => 
       array (
         'weight' => 
+        array (
+          'length' => '',
+          'collation' => 'A',
+          'null' => false,
+        ),
+      ),
+    ),
+    'parent_id' => 
+    array (
+      'alias' => 'parent_id',
+      'primary' => false,
+      'unique' => false,
+      'type' => 'BTREE',
+      'columns' => 
+      array (
+        'parent_id' => 
         array (
           'length' => '',
           'collation' => 'A',

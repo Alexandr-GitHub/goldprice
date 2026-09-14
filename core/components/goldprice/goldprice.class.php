@@ -127,10 +127,26 @@ class GoldPrice
         $this->modx->lexicon->load('goldprice:default');
 
         $productId = (int) $resource->get('id');
+        $product = $this->getProductData($productId);
+        $groups = $this->getGroupsList();
+        $parentById = [];
+        foreach ($groups as $row) {
+            if (!empty($row['parent_id'])) {
+                $parentById[(int) $row['id']] = (int) $row['parent_id'];
+            }
+        }
+        $storedGroupId = isset($product['group_id']) ? (int) $product['group_id'] : 0;
+        if ($storedGroupId > 0 && isset($parentById[$storedGroupId])) {
+            $product['subgroup_id'] = $storedGroupId;
+            $product['group_id'] = $parentById[$storedGroupId];
+        } else {
+            $product['subgroup_id'] = null;
+        }
+
         $config = [
             'assets_url' => $this->config['assets_url'],
-            'product' => $this->getProductData($productId),
-            'groups' => $this->getGroupsList(),
+            'product' => $product,
+            'groups' => $groups,
         ];
 
         $css = $this->config['css_url'] . 'mgr/main.css';
@@ -175,8 +191,12 @@ class GoldPrice
         }
 
         $allowedGroups = [];
+        $parentById = [];
         foreach ($this->getGroupsList() as $row) {
             $allowedGroups[] = (int) $row['id'];
+            if (!empty($row['parent_id'])) {
+                $parentById[(int) $row['id']] = (int) $row['parent_id'];
+            }
         }
 
         // Normalize group_id if combo sent display text (legacy misconfig).
@@ -184,6 +204,9 @@ class GoldPrice
             $label = (string) $_POST['goldprice']['group_id'];
             $_POST['goldprice']['group_id'] = '0';
             foreach ($this->getGroupsList() as $row) {
+                if (!empty($row['parent_id'])) {
+                    continue;
+                }
                 $want = $row['title'] . ' (' . $row['weight'] . ' г)';
                 if ($label === $want) {
                     $_POST['goldprice']['group_id'] = (string) $row['id'];
@@ -192,7 +215,11 @@ class GoldPrice
             }
         }
 
-        $result = \GoldPrice\Domain\Product\ProductFormPending::fromPost($_POST['goldprice'], $allowedGroups);
+        $result = \GoldPrice\Domain\Product\ProductFormPending::fromPost(
+            $_POST['goldprice'],
+            $allowedGroups,
+            $parentById
+        );
         if (!$result['ok']) {
             $this->modx->event->output(implode(' ', $result['errors']));
             return;
@@ -287,7 +314,7 @@ class GoldPrice
     }
 
     /**
-     * @return array<int,array{id:int,weight:float,title:string}>
+     * @return array<int,array{id:int,weight:float,title:string,parent_id:?int}>
      */
     public function getGroupsList()
     {
@@ -297,10 +324,12 @@ class GoldPrice
         /** @var GoldPriceGroup[] $rows */
         $rows = $this->modx->getCollection('GoldPriceGroup', $q);
         foreach ($rows as $row) {
+            $parentId = (int) $row->get('parent_id');
             $out[] = [
                 'id' => (int) $row->get('id'),
                 'weight' => (float) $row->get('weight'),
                 'title' => (string) $row->get('title'),
+                'parent_id' => $parentId > 0 ? $parentId : null,
             ];
         }
 

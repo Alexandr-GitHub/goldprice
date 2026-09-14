@@ -31,6 +31,7 @@ class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
     public function beforeSet()
     {
         $this->before = $this->object->toArray();
+        $isSubgroup = (int) $this->object->get('parent_id') > 0;
 
         $title = trim((string) $this->getProperty('title', $this->object->get('title')));
         if ($title === '') {
@@ -38,16 +39,18 @@ class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
         }
         $this->setProperty('title', $title);
 
-        $numeric = [
-            'weight',
-            'sale_markup',
-            'sale_fix',
-            'buy_discount',
-            'buy_fix',
-            'price_step',
-            'stoploss',
-            'min_margin',
-        ];
+        $numeric = $isSubgroup
+            ? ['sale_markup', 'sale_fix', 'buy_discount', 'buy_fix']
+            : [
+                'weight',
+                'sale_markup',
+                'sale_fix',
+                'buy_discount',
+                'buy_fix',
+                'price_step',
+                'stoploss',
+                'min_margin',
+            ];
         foreach ($numeric as $field) {
             $value = CmpFormat::sanitizeNumber($this->getProperty($field, $this->object->get($field)));
             if ($value === null) {
@@ -56,7 +59,11 @@ class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
             $this->setProperty($field, $value);
         }
 
-        if ((float) $this->getProperty('weight') <= 0) {
+        if ($isSubgroup) {
+            foreach (['weight', 'price_step', 'stoploss', 'min_margin'] as $field) {
+                $this->unsetProperty($field);
+            }
+        } elseif ((float) $this->getProperty('weight') <= 0) {
             return $this->modx->lexicon('goldprice.err_group_weight');
         }
 
@@ -86,6 +93,7 @@ class GoldPriceMgrGroupUpdateFromGridProcessor extends modObjectUpdateProcessor
         $summary = $this->getProperty('_recalc');
         if (is_array($summary)) {
             $message = isset($summary['message']) ? (string) $summary['message'] : '';
+
             return $this->success($message, $summary);
         }
 

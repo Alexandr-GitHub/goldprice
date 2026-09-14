@@ -1,5 +1,15 @@
 GoldPrice.grid.Prices = function (config) {
     config = config || {};
+    var groupFilterData = [['0', _('goldprice.price_group_all')]];
+    var groups = (GoldPrice.config && GoldPrice.config.groups) ? GoldPrice.config.groups : [];
+    for (var gi = 0; gi < groups.length; gi++) {
+        if (!groups[gi].parent_id) {
+            groupFilterData.push([
+                String(groups[gi].id),
+                groups[gi].title + ' (' + groups[gi].weight + ' г)'
+            ]);
+        }
+    }
     Ext.applyIf(config, {
         id: 'goldprice-grid-prices',
         url: GoldPrice.config.connector_url,
@@ -52,7 +62,31 @@ GoldPrice.grid.Prices = function (config) {
             dataIndex: 'updated_at',
             width: 140
         }],
-        tbar: ['->', {
+        tbar: [{
+            xtype: 'combo',
+            id: 'goldprice-prices-group-filter',
+            width: 220,
+            store: new Ext.data.ArrayStore({
+                id: 0,
+                fields: ['value', 'text'],
+                data: groupFilterData
+            }),
+            valueField: 'value',
+            displayField: 'text',
+            mode: 'local',
+            triggerAction: 'all',
+            editable: false,
+            forceSelection: true,
+            value: '0',
+            listeners: {
+                select: {
+                    fn: function (combo) {
+                        this.filterByGroup(combo.getValue());
+                    },
+                    scope: this
+                }
+            }
+        }, '->', {
             xtype: 'textfield',
             id: 'goldprice-prices-search',
             emptyText: _('goldprice.search'),
@@ -78,6 +112,10 @@ GoldPrice.grid.Prices = function (config) {
     GoldPrice.grid.Prices.superclass.constructor.call(this, config);
 };
 Ext.extend(GoldPrice.grid.Prices, MODx.grid.Grid, {
+    filterByGroup: function (groupId) {
+        this.getStore().baseParams.group_id = groupId || '0';
+        this.getBottomToolbar().changePage(1);
+    },
     search: function (query) {
         this.getStore().baseParams.query = query || '';
         this.getBottomToolbar().changePage(1);

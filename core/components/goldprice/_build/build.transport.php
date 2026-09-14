@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.0.1');
+define('PKG_VERSION', '1.1.0');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';

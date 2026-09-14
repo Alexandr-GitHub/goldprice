@@ -58,6 +58,9 @@ final class StormService
         }
 
         foreach ($this->modx->getCollection('GoldPriceGroup') as $group) {
+            if ((int) $group->get('parent_id') > 0) {
+                continue;
+            }
             $groupId = (int) $group->get('id');
             $state = $states[$groupId] ?? null;
             $decision = StormDetector::decide(

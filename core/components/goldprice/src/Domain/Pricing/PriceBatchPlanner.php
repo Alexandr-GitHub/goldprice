@@ -5,6 +5,7 @@ namespace GoldPrice\Domain\Pricing;
 
 use GoldPrice\Domain\Money;
 use GoldPrice\Domain\Quote\Quote;
+use GoldPrice\Mgr\GroupTree;
 
 /**
  * Pure batch calculation plan. Persistence adapters only load rows and apply writes.
@@ -48,7 +49,15 @@ final class PriceBatchPlanner
                 }
                 $groupId = isset($row['group_id']) ? (int) $row['group_id'] : 0;
                 $groupRow = $groupId > 0 && isset($groupsById[$groupId]) ? $groupsById[$groupId] : null;
-                $group = $groupRow === null ? null : GroupParams::fromRow($groupRow);
+                $rootId = $groupId > 0 ? GroupTree::rootId($groupId, $groupsById) : 0;
+                $rootRow = $rootId > 0 && isset($groupsById[$rootId]) ? $groupsById[$rootId] : null;
+                if ($groupRow === null) {
+                    $group = null;
+                } else {
+                    $parentId = isset($groupRow['parent_id']) ? (int) $groupRow['parent_id'] : 0;
+                    $parentRow = $parentId > 0 && isset($groupsById[$parentId]) ? $groupsById[$parentId] : null;
+                    $group = GroupParams::resolve($groupRow, $parentRow);
+                }
                 $product = ProductParams::fromRow($row);
                 $ignoreMarket = $product->isIgnoreMarket();
                 // Manual prices do not need a live quote. A stale market must not wipe them,
@@ -77,10 +86,10 @@ final class PriceBatchPlanner
                 $currentBuy = $current === null || (float) ($current['buy_price'] ?? 0) <= 0
                     ? null
                     : Money::roundMoney((float) $current['buy_price']);
-                $step = ($ignoreMarket || $groupRow === null) ? 0.0 : (float) ($groupRow['price_step'] ?? 0);
+                $step = ($ignoreMarket || $rootRow === null) ? 0.0 : (float) ($rootRow['price_step'] ?? 0);
 
-                $storm = (!$ignoreMarket && $groupId > 0 && isset($stormByGroup[$groupId]))
-                    ? $stormByGroup[$groupId]
+                $storm = (!$ignoreMarket && $rootId > 0 && isset($stormByGroup[$rootId]))
+                    ? $stormByGroup[$rootId]
                     : null;
                 $stormReason = $storm === null ? '' : (string) ($storm['reason'] ?? '');
                 $newSale = $result->getSalePrice();

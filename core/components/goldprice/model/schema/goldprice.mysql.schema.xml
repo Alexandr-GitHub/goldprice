@@ -10,9 +10,14 @@
         <field key="price_step" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
         <field key="stoploss" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
         <field key="min_margin" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
+        <field key="parent_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
         <index alias="weight" name="weight" primary="false" unique="false" type="BTREE">
             <column key="weight" length="" collation="A" null="false" />
         </index>
+        <index alias="parent_id" name="parent_id" primary="false" unique="false" type="BTREE">
+            <column key="parent_id" length="" collation="A" null="false" />
+        </index>
+        <aggregate alias="Parent" class="GoldPriceGroup" local="parent_id" foreign="id" cardinality="one" owner="foreign" />
     </object>
 
     <object class="GoldPriceProduct" table="goldprice_product" extends="xPDOSimpleObject">

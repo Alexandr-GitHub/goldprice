@@ -11,11 +11,12 @@ final class ProductFormPending
     /**
      * @param array $input
      * @param int[] $allowedGroupIds
+     * @param array<int,int> $parentById
      * @return array{ok:bool,errors:string[],pending:?array}
      */
-    public static function fromPost(array $input, array $allowedGroupIds)
+    public static function fromPost(array $input, array $allowedGroupIds, array $parentById = [])
     {
-        $result = ProductDataValidator::validate($input, $allowedGroupIds);
+        $result = ProductDataValidator::validate($input, $allowedGroupIds, $parentById);
         if (!$result['ok']) {
             return [
                 'ok' => false,

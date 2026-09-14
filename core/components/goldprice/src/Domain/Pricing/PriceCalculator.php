@@ -106,7 +106,8 @@ final class PriceCalculator
         } else {
             $pct = $group->getSaleMarkupPct();
             $fix = $group->getSaleFix();
-            $source = 'наценка группы';
+            $label = $group->getLabel();
+            $source = $label !== '' ? 'наценка ' . $label : 'наценка группы';
         }
 
         $sale = $cost * (1 + $pct / 100) + $fix;
@@ -159,9 +160,12 @@ final class PriceCalculator
             );
         } else {
             $buy = $cost * (1 - $group->getBuyDiscountPct() / 100) - $group->getBuyFix();
+            $label = $group->getLabel();
+            $buySource = $label !== '' ? 'скидка выкупа ' . $label : 'скидка выкупа группы';
             $calc = sprintf(
-                'Себестоимость %s ₽; скидка выкупа группы %s%% %s %s ₽ = %s ₽',
+                'Себестоимость %s ₽; %s %s%% %s %s ₽ = %s ₽',
                 Money::roundMoney($cost),
+                $buySource,
                 self::number($group->getBuyDiscountPct()),
                 $group->getBuyFix() < 0 ? '+' : '−',
                 Money::roundMoney(abs($group->getBuyFix())),

@@ -2,7 +2,7 @@
 
 Компонент [MODX Revolution](https://modx.com/) + [miniShop2](https://modstore.pro/packages/ecommerce/minishop2): котировки золота и USD/RUB, расчёт цен продажи и выкупа, корзина с серверной ценой, заявки на скупку, режим «Шторм».
 
-Лицензия: [MIT](LICENSE). Готовый пакет для установки — в [Releases](https://github.com/Alexandr-GitHub/goldprice/releases): `goldprice-1.0.1-pl.transport.zip`.
+Лицензия: [MIT](LICENSE). Готовый пакет для установки — в [Releases](https://github.com/Alexandr-GitHub/goldprice/releases): `goldprice-1.1.0-pl.transport.zip`.
 
 ## Требования
 
@@ -14,7 +14,7 @@
 
 ## Установка
 
-1. Скачайте `goldprice-1.0.1-pl.transport.zip` из релиза.
+1. Скачайте `goldprice-1.1.0-pl.transport.zip` из релиза.
 2. Положите файл в `core/packages/` сайта.
 3. В админке: **Приложения → Установщик → Искать пакеты локально → Установить**.
 4. Заполните системные настройки (пустые в пакете специально):
@@ -37,6 +37,10 @@ cost  = ₽/г × weight
 sale  = cost × (1 + markup%) + fix
 buy   = cost × (1 − discount%) − fix
 ```
+
+Четыре **весовые группы** задают базовые наценки, шаг цены, стоп-лосс и мин. маржу. **Подгруппы-серии** (один уровень вложенности) хранят только дельты к родителю: итоговая наценка = база группы + дельта подгруппы. Шаг цены, шторм и мин. маржа берутся только из весовой группы.
+
+В карточке товара: весовая группа и необязательная подгруппа. В базе сохраняется один `group_id` — id подгруппы, если выбрана, иначе id весовой группы.
 
 Индивидуально у товара: `custom_pct` / `custom_fix` (продажа) и `custom_buy_pct` / `custom_buy_fix` (выкуп). Оба поля выкупа 0 — формула группы. Суммы на витрине — **целые рубли**.
 
@@ -118,5 +122,5 @@ MODX снимает объекты пакета и файлы. Восемь та
 ```
 assets/components/goldprice/     # CMP JS/CSS, connector
 core/components/goldprice/       # PHP, модель, _build, тесты
-goldprice-1.0.1-pl.transport.zip # готовый пакет (также в GitHub Release)
+goldprice-1.1.0-pl.transport.zip # готовый пакет (также в GitHub Release)
 ```
