@@ -51,6 +51,7 @@ final class TransportPackageGateTest extends TestCase
         $src = file_get_contents($this->unpackDir . '/' . $body['source']);
         $this->assertStringContainsString('parent_id', $src);
         $this->assertStringContainsString('deleted_at', $src);
+        $this->assertStringContainsString('add_to_parent', $src);
         $this->assertStringContainsString('goldpriceMigrateRawColumns', $src);
     }
 
@@ -89,6 +90,7 @@ final class TransportPackageGateTest extends TestCase
             'goldprice-1.1.3-pl',
             'goldprice-1.1.4-pl',
             'goldprice-1.1.5-pl',
+            'goldprice-1.1.6-pl',
         ];
         $stale = array_values(array_filter($stale, fn ($n) => $n !== $this->pkgName));
         $iterator = new \RecursiveIteratorIterator(
@@ -130,6 +132,7 @@ final class TransportPackageGateTest extends TestCase
         $this->assertNotEmpty($changelog);
         $hasFeatureNote = strpos($changelog, 'parent_id') !== false
             || strpos($changelog, 'deleted_at') !== false
+            || strpos($changelog, 'add_to_parent') !== false
             || strpos($changelog, 'Корзина') !== false
             || strpos($changelog, 'gold_usd') !== false
             || strpos($changelog, 'Trash') !== false;

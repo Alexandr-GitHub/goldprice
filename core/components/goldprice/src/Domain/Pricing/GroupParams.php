@@ -68,12 +68,23 @@ final class GroupParams
         $title = trim((string) ($row['title'] ?? ''));
         $label = $title !== '' ? 'подгруппы «' . $title . '»' : 'подгруппы';
 
+        if (!empty($row['add_to_parent'])) {
+            return new self(
+                self::float($parentRow, 'sale_markup') + self::float($row, 'sale_markup'),
+                self::float($parentRow, 'sale_fix') + self::float($row, 'sale_fix'),
+                self::float($parentRow, 'buy_discount') + self::float($row, 'buy_discount'),
+                self::float($parentRow, 'buy_fix') + self::float($row, 'buy_fix'),
+                self::float($parentRow, 'min_margin'),
+                $label
+            );
+        }
+
         return new self(
-            self::float($parentRow, 'sale_markup') + self::float($row, 'sale_markup'),
-            self::float($parentRow, 'sale_fix') + self::float($row, 'sale_fix'),
-            self::float($parentRow, 'buy_discount') + self::float($row, 'buy_discount'),
-            self::float($parentRow, 'buy_fix') + self::float($row, 'buy_fix'),
-            self::float($parentRow, 'min_margin'),
+            self::float($row, 'sale_markup'),
+            self::float($row, 'sale_fix'),
+            self::float($row, 'buy_discount'),
+            self::float($row, 'buy_fix'),
+            self::float($row, 'min_margin'),
             $label
         );
     }

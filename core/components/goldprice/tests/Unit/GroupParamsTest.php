@@ -44,6 +44,7 @@ final class GroupParamsTest extends TestCase
         ];
         $child = [
             'title' => 'Кенгуру',
+            'add_to_parent' => 1,
             'sale_markup' => 2,
             'sale_fix' => 50,
             'buy_discount' => 1,
@@ -59,5 +60,58 @@ final class GroupParamsTest extends TestCase
         $this->assertSame(320.0, $group->getBuyFix());
         $this->assertSame(1000.0, $group->getMinMargin());
         $this->assertSame('подгруппы «Кенгуру»', $group->getLabel());
+    }
+
+    public function testSubgroupOwnMarkupsWhenAddToParentOff(): void
+    {
+        $parent = [
+            'sale_markup' => 12,
+            'sale_fix' => 200,
+            'buy_discount' => 12,
+            'buy_fix' => 300,
+            'min_margin' => 1000,
+        ];
+        $child = [
+            'title' => 'Кенгуру',
+            'add_to_parent' => 0,
+            'sale_markup' => 2,
+            'sale_fix' => 50,
+            'buy_discount' => 1,
+            'buy_fix' => 20,
+            'min_margin' => 500,
+        ];
+
+        $group = GroupParams::resolve($child, $parent);
+
+        $this->assertSame(2.0, $group->getSaleMarkupPct());
+        $this->assertSame(50.0, $group->getSaleFix());
+        $this->assertSame(1.0, $group->getBuyDiscountPct());
+        $this->assertSame(20.0, $group->getBuyFix());
+        $this->assertSame(500.0, $group->getMinMargin());
+        $this->assertSame('подгруппы «Кенгуру»', $group->getLabel());
+    }
+
+    public function testSubgroupOwnMarkupsWhenAddToParentMissing(): void
+    {
+        $parent = [
+            'sale_markup' => 12,
+            'sale_fix' => 200,
+            'buy_discount' => 12,
+            'buy_fix' => 300,
+            'min_margin' => 1000,
+        ];
+        $child = [
+            'title' => 'Кенгуру',
+            'sale_markup' => 2,
+            'sale_fix' => 50,
+            'buy_discount' => 1,
+            'buy_fix' => 20,
+            'min_margin' => 500,
+        ];
+
+        $group = GroupParams::resolve($child, $parent);
+
+        $this->assertSame(2.0, $group->getSaleMarkupPct());
+        $this->assertSame(500.0, $group->getMinMargin());
     }
 }

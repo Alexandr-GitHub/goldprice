@@ -28,6 +28,11 @@ class GoldPriceMgrGroupUpdateProcessor extends modObjectUpdateProcessor
         }
         $this->setProperty('title', $title);
 
+        if ($isSubgroup) {
+            $this->setProperty('add_to_parent', empty($this->getProperty('add_to_parent')) ? 0 : 1);
+        }
+
+        $addToParent = $isSubgroup && (int) $this->getProperty('add_to_parent') === 1;
         $numeric = $isSubgroup
             ? ['sale_markup', 'sale_fix', 'buy_discount', 'buy_fix']
             : [
@@ -40,6 +45,9 @@ class GoldPriceMgrGroupUpdateProcessor extends modObjectUpdateProcessor
                 'stoploss',
                 'min_margin',
             ];
+        if ($isSubgroup && !$addToParent) {
+            $numeric[] = 'min_margin';
+        }
         foreach ($numeric as $field) {
             $value = CmpFormat::sanitizeNumber($this->getProperty($field, $this->object->get($field)));
             if ($value === null) {
@@ -49,8 +57,11 @@ class GoldPriceMgrGroupUpdateProcessor extends modObjectUpdateProcessor
         }
 
         if ($isSubgroup) {
-            foreach (['weight', 'price_step', 'stoploss', 'min_margin', 'parent_id'] as $field) {
+            foreach (['weight', 'price_step', 'stoploss', 'parent_id'] as $field) {
                 $this->unsetProperty($field);
+            }
+            if ($addToParent) {
+                $this->unsetProperty('min_margin');
             }
         } elseif ((float) $this->getProperty('weight') <= 0) {
             return $this->modx->lexicon('goldprice.err_group_weight');

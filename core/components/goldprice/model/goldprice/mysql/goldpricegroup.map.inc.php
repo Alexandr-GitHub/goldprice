@@ -20,6 +20,7 @@ $xpdo_meta_map['GoldPriceGroup']= array (
     'stoploss' => 0.0,
     'min_margin' => 0.0,
     'parent_id' => null,
+    'add_to_parent' => false,
     'deleted_at' => null,
   ),
   'fieldMeta' => 
@@ -103,6 +104,15 @@ $xpdo_meta_map['GoldPriceGroup']= array (
       'attributes' => 'unsigned',
       'phptype' => 'integer',
       'null' => true,
+    ),
+    'add_to_parent' => 
+    array (
+      'dbtype' => 'tinyint',
+      'precision' => '1',
+      'attributes' => 'unsigned',
+      'phptype' => 'boolean',
+      'null' => false,
+      'default' => 0,
     ),
     'deleted_at' => 
     array (

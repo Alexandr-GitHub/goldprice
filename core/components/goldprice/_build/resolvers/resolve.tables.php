@@ -35,6 +35,14 @@ if (!function_exists('goldpriceMigrateRawColumns')) {
                 'definition' => '`custom_buy_fix` decimal(12,2) NOT NULL DEFAULT 0',
                 'index' => null,
             ),
+            array(
+                'table' => $prefix . 'goldprice_group',
+                'column' => 'add_to_parent',
+                'definition' => '`add_to_parent` tinyint(1) unsigned NOT NULL DEFAULT 0',
+                'index' => null,
+                'after_add' => 'UPDATE `' . str_replace('`', '``', $prefix . 'goldprice_group')
+                    . '` SET `add_to_parent` = 1 WHERE `parent_id` IS NOT NULL',
+            ),
         );
 
         foreach ($migrations as $m) {
@@ -60,6 +68,14 @@ if (!function_exists('goldpriceMigrateRawColumns')) {
                 continue;
             }
             $modx->log(modX::LOG_LEVEL_INFO, '[goldprice] migrate: added ' . $m['table'] . '.' . $column);
+
+            if (!empty($m['after_add'])) {
+                if ($modx->exec($m['after_add']) === false) {
+                    $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] migrate: after_add failed: ' . $m['after_add']);
+                } else {
+                    $modx->log(modX::LOG_LEVEL_INFO, '[goldprice] migrate: after_add ok for ' . $m['table'] . '.' . $column);
+                }
+            }
 
             if (!empty($m['index'])) {
                 $hasIdx = false;

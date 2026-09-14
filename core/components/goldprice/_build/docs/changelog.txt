@@ -1,6 +1,10 @@
 GoldPrice Changelog
 ===================
 
+1.1.7-pl — 2026-09-14
+---------------------
+- Subgroup markup mode add_to_parent: default off (full own markups and min. margin). On — deltas added to parent, min. margin from parent. Migration sets add_to_parent=1 for existing subgroups.
+
 1.1.6-pl — 2026-09-14
 ---------------------
 - Fixed TypeError on group delete from context menu (plain record object, not Ext.data.Record).

@@ -7,7 +7,7 @@ GoldPrice.grid.Groups = function (config) {
         fields: [
             'id', 'parent_id', 'parent_title', 'level', 'weight', 'title',
             'sale_markup', 'sale_fix', 'buy_discount', 'buy_fix',
-            'price_step', 'stoploss', 'min_margin'
+            'price_step', 'stoploss', 'min_margin', 'add_to_parent'
         ],
         autosave: true,
         save_action: 'mgr/group/updatefromgrid',
@@ -73,6 +73,17 @@ GoldPrice.grid.Groups = function (config) {
             dataIndex: 'min_margin',
             width: 110,
             editor: { xtype: 'numberfield', decimalPrecision: 2 }
+        }, {
+            header: _('goldprice.group_add_to_parent'),
+            dataIndex: 'add_to_parent',
+            width: 90,
+            renderer: function (value, meta, record) {
+                if (!record.get('parent_id')) {
+                    return '—';
+                }
+                return value ? '✓' : '';
+            },
+            editor: { xtype: 'xcheckbox', inputValue: 1 }
         }],
         tbar: [{
             text: _('goldprice.group_root_create'),
@@ -88,7 +99,7 @@ GoldPrice.grid.Groups = function (config) {
     GoldPrice.grid.Groups.superclass.constructor.call(this, config);
 };
 Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
-    inheritedFields: ['weight', 'price_step', 'stoploss', 'min_margin'],
+    subgroupLockedFields: ['weight', 'price_step', 'stoploss'],
     getMenu: function () {
         if (!this.menu.record) {
             return [];
@@ -105,7 +116,20 @@ Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
         }];
     },
     beforeedit: function (e) {
-        if (e.record.get('parent_id') && e.field && this.inheritedFields.indexOf(e.field) !== -1) {
+        if (!e.record.get('parent_id')) {
+            if (e.field === 'add_to_parent') {
+                return false;
+            }
+            return GoldPrice.grid.Groups.superclass.beforeedit.call(this, e);
+        }
+        if (e.field === 'add_to_parent') {
+            return GoldPrice.grid.Groups.superclass.beforeedit.call(this, e);
+        }
+        var locked = this.subgroupLockedFields.slice();
+        if (e.record.get('add_to_parent')) {
+            locked.push('min_margin');
+        }
+        if (e.field && locked.indexOf(e.field) !== -1) {
             return false;
         }
         return GoldPrice.grid.Groups.superclass.beforeedit.call(this, e);

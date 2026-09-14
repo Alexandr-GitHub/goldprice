@@ -410,6 +410,7 @@ final class PriceBatchPlannerTest extends TestCase
             10 => [
                 'id' => 10,
                 'parent_id' => 3,
+                'add_to_parent' => 1,
                 'title' => 'Кенгуру',
                 'sale_markup' => 2,
                 'sale_fix' => 0,

@@ -11,6 +11,7 @@
         <field key="stoploss" dbtype="decimal" precision="8,4" phptype="float" null="false" default="0" />
         <field key="min_margin" dbtype="decimal" precision="12,2" phptype="float" null="false" default="0" />
         <field key="parent_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" />
+        <field key="add_to_parent" dbtype="tinyint" precision="1" attributes="unsigned" phptype="boolean" null="false" default="0" />
         <field key="deleted_at" dbtype="datetime" phptype="datetime" null="true" />
         <index alias="weight" name="weight" primary="false" unique="false" type="BTREE">
             <column key="weight" length="" collation="A" null="false" />

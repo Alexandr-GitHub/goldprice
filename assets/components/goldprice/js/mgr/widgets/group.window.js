@@ -151,6 +151,32 @@ GoldPrice.window.GroupSubgroup = function (config) {
             anchor: '100%',
             decimalPrecision: 2,
             value: 0
+        }, {
+            xtype: 'xcheckbox',
+            name: 'add_to_parent',
+            boxLabel: _('goldprice.group_add_to_parent'),
+            description: _('goldprice.group_add_to_parent_desc'),
+            anchor: '100%',
+            inputValue: 1,
+            checked: false,
+            listeners: {
+                check: function (cb, checked) {
+                    var f = cb.ownerCt.find('name', 'min_margin')[0];
+                    if (f) {
+                        f.setDisabled(checked);
+                        if (checked) {
+                            f.setValue(0);
+                        }
+                    }
+                }
+            }
+        }, {
+            xtype: 'numberfield',
+            name: 'min_margin',
+            fieldLabel: _('goldprice.group_min_margin'),
+            anchor: '100%',
+            decimalPrecision: 2,
+            value: 0
         }]
     });
     GoldPrice.window.GroupSubgroup.superclass.constructor.call(this, config);

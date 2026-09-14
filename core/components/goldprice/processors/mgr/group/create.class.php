@@ -67,7 +67,7 @@ class GoldPriceMgrGroupCreateProcessor extends modObjectCreateProcessor
         $this->setProperty('weight', (float) $parent->get('weight'));
         $this->setProperty('price_step', 0);
         $this->setProperty('stoploss', 0);
-        $this->setProperty('min_margin', 0);
+        $this->setProperty('add_to_parent', empty($this->getProperty('add_to_parent')) ? 0 : 1);
 
         foreach (['sale_markup', 'sale_fix', 'buy_discount', 'buy_fix'] as $field) {
             $value = CmpFormat::sanitizeNumber($this->getProperty($field, 0));
@@ -75,6 +75,16 @@ class GoldPriceMgrGroupCreateProcessor extends modObjectCreateProcessor
                 return $this->modx->lexicon('goldprice.err_group_number', ['field' => $field]);
             }
             $this->setProperty($field, $value);
+        }
+
+        if ((int) $this->getProperty('add_to_parent') === 1) {
+            $this->setProperty('min_margin', 0);
+        } else {
+            $value = CmpFormat::sanitizeNumber($this->getProperty('min_margin', 0));
+            if ($value === null) {
+                return $this->modx->lexicon('goldprice.err_group_number', ['field' => 'min_margin']);
+            }
+            $this->setProperty('min_margin', $value);
         }
 
         return parent::beforeSet();
