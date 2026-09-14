@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.1.2');
+define('PKG_VERSION', '1.1.3');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -63,18 +63,10 @@ foreach (array('goldprice.class.php', 'index.class.php') as $file) {
         array('vehicle_class' => 'xPDOFileVehicle')
     );
 }
-
-$assetsPath = MODX_ASSETS_PATH . 'components/' . PKG_NAME . '/';
-if (is_dir($assetsPath)) {
-    $builder->package->put(
-        array(
-            'source' => $assetsPath,
-            'target' => "return MODX_ASSETS_PATH . 'components/';",
-        ),
-        array('vehicle_class' => 'xPDOFileVehicle')
-    );
-}
-$modx->log(modX::LOG_LEVEL_INFO, 'File vehicles packed.');
+// Assets packed LAST (after category resolver): on upgrade MODX zips the existing
+// assets tree into *.preserved.zip and can hang on shared hosting before the
+// tables resolver ever runs — parent_id never gets added.
+$modx->log(modX::LOG_LEVEL_INFO, 'Core file vehicles packed (assets deferred).');
 
 $category = $modx->newObject('modCategory');
 $category->set('id', 1);
@@ -191,6 +183,18 @@ $menuVehicle = $builder->createVehicle($menu, array(
 $menuVehicle->resolve('php', array('source' => $sources['resolvers'] . 'resolve.tables.php'));
 $builder->putVehicle($menuVehicle);
 $modx->log(modX::LOG_LEVEL_INFO, 'Menu item packed.');
+
+$assetsPath = MODX_ASSETS_PATH . 'components/' . PKG_NAME . '/';
+if (is_dir($assetsPath)) {
+    $builder->package->put(
+        array(
+            'source' => $assetsPath,
+            'target' => "return MODX_ASSETS_PATH . 'components/';",
+        ),
+        array('vehicle_class' => 'xPDOFileVehicle')
+    );
+    $modx->log(modX::LOG_LEVEL_INFO, 'Assets file vehicle packed last.');
+}
 
 $builder->setPackageAttributes(array(
     'license' => file_exists($sources['build'] . 'docs/license.txt')
