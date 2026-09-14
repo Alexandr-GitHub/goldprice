@@ -1,6 +1,12 @@
 GoldPrice Changelog
 ===================
 
+1.1.6-pl — 2026-09-14
+---------------------
+- Fixed TypeError on group delete from context menu (plain record object, not Ext.data.Record).
+- Group grid context menu: Update and Copy via create/edit windows (root vs subgroup).
+- Trash: fixed parent_id check on permanent delete (purge).
+
 1.1.5-pl — 2026-09-14
 ---------------------
 - Soft-delete for weight groups and subgroups (deleted_at); CMP Trash tab with restore and permanent delete.

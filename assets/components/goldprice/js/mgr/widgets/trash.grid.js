@@ -74,7 +74,7 @@ Ext.extend(GoldPrice.grid.GroupTrash, MODx.grid.Grid, {
         });
     },
     purgeGroup: function () {
-        var isSubgroup = !!this.menu.record.get('parent_id');
+        var isSubgroup = !!this.menu.record.parent_id;
         MODx.msg.confirm({
             title: _('goldprice.group_purge'),
             text: isSubgroup

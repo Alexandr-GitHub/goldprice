@@ -94,6 +94,12 @@ Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
             return [];
         }
         return [{
+            text: _('update'),
+            handler: this.updateGroup
+        }, {
+            text: _('goldprice.group_copy'),
+            handler: this.copyGroup
+        }, '-', {
             text: _('goldprice.group_remove'),
             handler: this.removeGroup
         }];
@@ -126,8 +132,53 @@ Ext.extend(GoldPrice.grid.Groups, MODx.grid.Grid, {
         w.reset();
         w.show();
     },
+    updateGroup: function () {
+        var rec = this.menu.record;
+        var isSubgroup = !!rec.parent_id;
+        var w = MODx.load({
+            xtype: isSubgroup ? 'goldprice-window-group-subgroup' : 'goldprice-window-group-root',
+            title: isSubgroup ? _('goldprice.group_subgroup_update') : _('goldprice.group_root_update'),
+            baseParams: { action: 'mgr/group/update' },
+            listeners: {
+                success: {
+                    fn: function (r) {
+                        this.refresh();
+                        GoldPrice.refreshAfterRecalc(r);
+                    },
+                    scope: this
+                }
+            }
+        });
+        w.reset();
+        w.setValues(rec);
+        w.show();
+    },
+    copyGroup: function () {
+        var rec = this.menu.record;
+        var isSubgroup = !!rec.parent_id;
+        var values = Ext.apply({}, rec);
+        delete values.id;
+        values.title = (values.title || '') + _('goldprice.group_copy_suffix');
+        var w = MODx.load({
+            xtype: isSubgroup ? 'goldprice-window-group-subgroup' : 'goldprice-window-group-root',
+            title: isSubgroup ? _('goldprice.group_subgroup_create') : _('goldprice.group_root_create'),
+            baseParams: { action: 'mgr/group/create' },
+            listeners: {
+                success: {
+                    fn: function (r) {
+                        this.refresh();
+                        GoldPrice.refreshAfterRecalc(r);
+                    },
+                    scope: this
+                }
+            }
+        });
+        w.reset();
+        w.setValues(values);
+        w.show();
+    },
     removeGroup: function () {
-        var isSubgroup = !!this.menu.record.get('parent_id');
+        var isSubgroup = !!this.menu.record.parent_id;
         MODx.msg.confirm({
             title: _('goldprice.group_remove'),
             text: isSubgroup

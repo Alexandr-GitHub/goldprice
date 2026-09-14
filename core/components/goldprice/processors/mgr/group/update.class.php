@@ -1,0 +1,93 @@
+<?php
+
+use GoldPrice\Mgr\CmpFormat;
+use GoldPrice\Mgr\GroupTrash;
+
+class GoldPriceMgrGroupUpdateProcessor extends modObjectUpdateProcessor
+{
+    public $classKey = 'GoldPriceGroup';
+    public $languageTopics = ['goldprice:default'];
+    public $permission = 'settings';
+    public $objectType = 'goldprice.group';
+
+    /** @var array<string,mixed> */
+    private $before = [];
+
+    public function beforeSet()
+    {
+        if (GroupTrash::isDeleted($this->object->toArray())) {
+            return $this->modx->lexicon('goldprice.err_group_deleted');
+        }
+
+        $this->before = $this->object->toArray();
+        $isSubgroup = (int) $this->object->get('parent_id') > 0;
+
+        $title = trim((string) $this->getProperty('title', $this->object->get('title')));
+        if ($title === '') {
+            return $this->modx->lexicon('goldprice.err_group_title');
+        }
+        $this->setProperty('title', $title);
+
+        $numeric = $isSubgroup
+            ? ['sale_markup', 'sale_fix', 'buy_discount', 'buy_fix']
+            : [
+                'weight',
+                'sale_markup',
+                'sale_fix',
+                'buy_discount',
+                'buy_fix',
+                'price_step',
+                'stoploss',
+                'min_margin',
+            ];
+        foreach ($numeric as $field) {
+            $value = CmpFormat::sanitizeNumber($this->getProperty($field, $this->object->get($field)));
+            if ($value === null) {
+                return $this->modx->lexicon('goldprice.err_group_number', ['field' => $field]);
+            }
+            $this->setProperty($field, $value);
+        }
+
+        if ($isSubgroup) {
+            foreach (['weight', 'price_step', 'stoploss', 'min_margin', 'parent_id'] as $field) {
+                $this->unsetProperty($field);
+            }
+        } elseif ((float) $this->getProperty('weight') <= 0) {
+            return $this->modx->lexicon('goldprice.err_group_weight');
+        }
+
+        return parent::beforeSet();
+    }
+
+    public function afterSave()
+    {
+        $after = $this->object->toArray();
+        $gp = $this->modx->goldprice;
+        if ($gp) {
+            $gp->writeLog('group_update', $this->modx->lexicon('goldprice.log_group_update', [
+                'title' => $after['title'],
+            ]), [
+                'id' => (int) $after['id'],
+                'before' => $this->before,
+                'after' => $after,
+            ]);
+            $this->setProperty('_recalc', $gp->recalculatePrices());
+        }
+
+        return parent::afterSave();
+    }
+
+    public function cleanup()
+    {
+        $summary = $this->getProperty('_recalc');
+        if (is_array($summary)) {
+            $message = isset($summary['message']) ? (string) $summary['message'] : '';
+
+            return $this->success($message, $summary);
+        }
+
+        return parent::cleanup();
+    }
+}
+
+return 'GoldPriceMgrGroupUpdateProcessor';

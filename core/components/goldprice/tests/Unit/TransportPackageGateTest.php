@@ -88,6 +88,7 @@ final class TransportPackageGateTest extends TestCase
             'goldprice-1.1.2-pl',
             'goldprice-1.1.3-pl',
             'goldprice-1.1.4-pl',
+            'goldprice-1.1.5-pl',
         ];
         $stale = array_values(array_filter($stale, fn ($n) => $n !== $this->pkgName));
         $iterator = new \RecursiveIteratorIterator(

@@ -72,6 +72,16 @@ final class TransportCmpTest extends TestCase
         $this->assertStringContainsString('array_key_exists', $src);
     }
 
+    public function testGroupUpdateProcessorRejectsDeletedGroups(): void
+    {
+        $src = dirname(__DIR__, 2) . '/processors/mgr/group/update.class.php';
+        $this->assertFileExists($src);
+        $code = file_get_contents($src);
+        $this->assertNotFalse($code);
+        $this->assertStringContainsString('GoldPriceMgrGroupUpdateProcessor', $code);
+        $this->assertStringContainsString('GroupTrash::isDeleted', $code);
+    }
+
     public function testProductTabDeclaresBuyoutMarkup(): void
     {
         $js = file_get_contents(dirname(__DIR__, 5) . '/assets/components/goldprice/js/mgr/product/product.tab.js');
