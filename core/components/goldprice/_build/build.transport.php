@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.1.3');
+define('PKG_VERSION', '1.1.4');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -30,17 +30,29 @@ $modx->setLogTarget(defined('XPDO_CLI_MODE') && XPDO_CLI_MODE ? 'ECHO' : 'HTML')
 $modx->loadClass('transport.modPackageBuilder', '', false, true);
 $builder = new modPackageBuilder($modx);
 $builder->createPackage(PKG_NAME, PKG_VERSION, PKG_RELEASE);
-$builder->registerNamespace(
-    PKG_NAME,
-    false,
-    true,
-    '{core_path}components/' . PKG_NAME . '/',
-    '{assets_path}components/' . PKG_NAME . '/'
+
+// Namespace first + early migrate (ALTER parent_id before any file preserve).
+$namespace = $modx->newObject('modNamespace');
+$namespace->fromArray(array(
+    'name' => PKG_NAME,
+    'path' => '{core_path}components/' . PKG_NAME . '/',
+    'assets_path' => '{assets_path}components/' . PKG_NAME . '/',
+), '', true, true);
+$nsVehicle = $builder->createVehicle($namespace, array(
+    xPDOTransport::UNIQUE_KEY => 'name',
+    xPDOTransport::PRESERVE_KEYS => true,
+    xPDOTransport::UPDATE_OBJECT => true,
+));
+$nsVehicle->resolve('php', array('source' => $sources['resolvers'] . 'resolve.migrate.php'));
+$builder->putVehicle($nsVehicle);
+$modx->log(modX::LOG_LEVEL_INFO, 'Namespace + migrate resolver packed.');
+
+// Skip preserved.zip on upgrade — Beget hangs packing existing trees into zip.
+$fileVehicleAttrs = array(
+    'vehicle_class' => 'xPDOFileVehicle',
+    xPDOTransport::PREEXISTING_MODE => xPDOTransport::REMOVE_PREEXISTING,
 );
 
-// Файлы идут первыми: resolve.tables.php поднимает xPDO-пакет из
-// core/components/goldprice/model, которого на чистой установке ещё нет.
-// Whitelist keeps _build, tests, vendor and composer files out of the package.
 foreach (array('model', 'src', 'lexicon', 'elements', 'cron', 'processors', 'controllers') as $dir) {
     if (!is_dir($root . $dir)) {
         continue;
@@ -50,7 +62,7 @@ foreach (array('model', 'src', 'lexicon', 'elements', 'cron', 'processors', 'con
             'source' => $root . $dir,
             'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
         ),
-        array('vehicle_class' => 'xPDOFileVehicle')
+        $fileVehicleAttrs
     );
 }
 
@@ -60,18 +72,14 @@ foreach (array('goldprice.class.php', 'index.class.php') as $file) {
             'source' => $root . $file,
             'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME . "/';",
         ),
-        array('vehicle_class' => 'xPDOFileVehicle')
+        $fileVehicleAttrs
     );
 }
-// Assets packed LAST (after category resolver): on upgrade MODX zips the existing
-// assets tree into *.preserved.zip and can hang on shared hosting before the
-// tables resolver ever runs — parent_id never gets added.
-$modx->log(modX::LOG_LEVEL_INFO, 'Core file vehicles packed (assets deferred).');
+$modx->log(modX::LOG_LEVEL_INFO, 'Core file vehicles packed (no preserve zip).');
 
 $category = $modx->newObject('modCategory');
 $category->set('id', 1);
 $category->set('category', PKG_NAME);
-
 $vehicle = $builder->createVehicle($category, array(
     xPDOTransport::UNIQUE_KEY => 'category',
     xPDOTransport::PRESERVE_KEYS => false,
@@ -174,7 +182,6 @@ $menu->fromArray(array(
     'namespace' => 'goldprice',
     'action' => 'home',
 ), '', true, true);
-// Tables resolver also on menu (after files): re-runs on upgrade if category vehicle was skipped.
 $menuVehicle = $builder->createVehicle($menu, array(
     xPDOTransport::PRESERVE_KEYS => true,
     xPDOTransport::UPDATE_OBJECT => true,
@@ -191,7 +198,7 @@ if (is_dir($assetsPath)) {
             'source' => $assetsPath,
             'target' => "return MODX_ASSETS_PATH . 'components/';",
         ),
-        array('vehicle_class' => 'xPDOFileVehicle')
+        $fileVehicleAttrs
     );
     $modx->log(modX::LOG_LEVEL_INFO, 'Assets file vehicle packed last.');
 }

@@ -6,8 +6,7 @@ namespace GoldPrice\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Gates the shipping transport zip: resolver path, vehicle order, migration code.
- * Catches the 1.1.0–1.1.2 packaging bugs without a live MODX install.
+ * Gates the shipping transport zip against Beget install failures.
  */
 final class TransportPackageGateTest extends TestCase
 {
@@ -17,7 +16,7 @@ final class TransportPackageGateTest extends TestCase
 
     protected function setUp(): void
     {
-        $repo = dirname(__DIR__, 5); // tests/Unit → repo root
+        $repo = dirname(__DIR__, 5);
         $candidates = glob($repo . '/goldprice-*-pl.transport.zip') ?: [];
         rsort($candidates);
         $this->assertNotEmpty($candidates, 'No goldprice-*-pl.transport.zip in repo root');
@@ -26,9 +25,8 @@ final class TransportPackageGateTest extends TestCase
         $this->unpackDir = sys_get_temp_dir() . '/goldprice-pkg-gate-' . getmypid();
         $this->rmTree($this->unpackDir);
         mkdir($this->unpackDir, 0755, true);
-        $cmd = 'unzip -q ' . escapeshellarg($this->zipPath) . ' -d ' . escapeshellarg($this->unpackDir);
-        exec($cmd, $out, $code);
-        $this->assertSame(0, $code, 'unzip failed: ' . $this->zipPath);
+        exec('unzip -q ' . escapeshellarg($this->zipPath) . ' -d ' . escapeshellarg($this->unpackDir), $out, $code);
+        $this->assertSame(0, $code, 'unzip failed');
     }
 
     protected function tearDown(): void
@@ -36,28 +34,59 @@ final class TransportPackageGateTest extends TestCase
         $this->rmTree($this->unpackDir);
     }
 
-    public function testPackageFolderMatchesZipName(): void
+    public function testNamespaceMigrateRunsFirstWithValidResolverPath(): void
     {
-        $this->assertDirectoryExists($this->unpackDir . '/' . $this->pkgName);
-    }
-
-    public function testCategoryResolverPathMatchesPackageFolder(): void
-    {
-        $catSig = '2dfceb2c9077da0728bf95a73b366ae1';
-        $vehicle = include $this->unpackDir . '/' . $this->pkgName . '/modCategory/' . $catSig . '.vehicle';
+        $manifest = include $this->unpackDir . '/' . $this->pkgName . '/manifest.php';
+        $first = $manifest['manifest-vehicles'][0];
+        $this->assertSame('modNamespace', $first['class']);
+        $nsSig = '4071b8cc8762511dfe14fcc9b4fcaef1';
+        $vehicle = include $this->unpackDir . '/' . $this->pkgName . '/modNamespace/' . $nsSig . '.vehicle';
         $this->assertIsArray($vehicle['resolve'] ?? null);
         $body = json_decode($vehicle['resolve'][0]['body'], true);
-        $this->assertIsArray($body);
-        $expected = $this->pkgName . '/modCategory/' . $catSig . '.resolve.tables.resolver';
-        $this->assertSame($expected, $body['source']);
-        $this->assertFileExists($this->unpackDir . '/' . $this->pkgName . '/' . str_replace($this->pkgName . '/', '', $body['source']));
-        // Absolute from unpack root:
+        $this->assertSame(
+            $this->pkgName . '/modNamespace/' . $nsSig . '.resolve.migrate.resolver',
+            $body['source']
+        );
         $this->assertFileExists($this->unpackDir . '/' . $body['source']);
+        $src = file_get_contents($this->unpackDir . '/' . $body['source']);
+        $this->assertStringContainsString('parent_id', $src);
+        $this->assertStringContainsString('goldpriceMigrateRawColumns', $src);
     }
 
-    public function testNoStalePackageFolderInVehicleSources(): void
+    public function testFileVehiclesSkipPreserveZip(): void
     {
-        $stale = ['goldprice-1.0.1-pl', 'goldprice-1.1.0-pl', 'goldprice-1.1.1-pl', 'goldprice-1.1.2-pl'];
+        $dir = $this->unpackDir . '/' . $this->pkgName . '/xPDOFileVehicle';
+        foreach (glob($dir . '/*.vehicle') as $file) {
+            $v = include $file;
+            $this->assertSame(
+                1,
+                (int) ($v['preexisting_mode'] ?? -1),
+                'preexisting_mode=REMOVE required in ' . basename($file)
+            );
+        }
+    }
+
+    public function testCategoryResolverDefinesMigrateBeforeCall(): void
+    {
+        $resolver = $this->unpackDir . '/' . $this->pkgName
+            . '/modCategory/2dfceb2c9077da0728bf95a73b366ae1.resolve.tables.resolver';
+        $src = file_get_contents($resolver);
+        $fn = strpos($src, 'function goldpriceMigrateRawColumns');
+        $call = strpos($src, 'goldpriceMigrateRawColumns($modx)');
+        $this->assertNotFalse($fn);
+        $this->assertNotFalse($call);
+        $this->assertLessThan($call, $fn, 'Fatal on Beget: call before function definition');
+    }
+
+    public function testNoStalePackageFolderInVehicles(): void
+    {
+        $stale = [
+            'goldprice-1.0.1-pl',
+            'goldprice-1.1.0-pl',
+            'goldprice-1.1.1-pl',
+            'goldprice-1.1.2-pl',
+            'goldprice-1.1.3-pl',
+        ];
         $stale = array_values(array_filter($stale, fn ($n) => $n !== $this->pkgName));
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($this->unpackDir . '/' . $this->pkgName)
@@ -68,51 +97,30 @@ final class TransportPackageGateTest extends TestCase
             }
             $raw = file_get_contents($file->getPathname());
             foreach ($stale as $name) {
-                $this->assertStringNotContainsString(
-                    $name,
-                    $raw,
-                    'Stale package path in ' . $file->getFilename()
-                );
+                $this->assertStringNotContainsString($name, $raw, $file->getFilename());
             }
         }
     }
 
-    public function testTablesResolverRunsBeforeAssetsVehicle(): void
+    public function testTablesResolverBeforeAssets(): void
     {
         $manifest = include $this->unpackDir . '/' . $this->pkgName . '/manifest.php';
-        $vehicles = $manifest['manifest-vehicles'];
-        $categoryIdx = null;
-        $assetsIdx = null;
-        foreach ($vehicles as $i => $v) {
+        $categoryIdx = $assetsIdx = null;
+        foreach ($manifest['manifest-vehicles'] as $i => $v) {
             $file = (string) ($v['filename'] ?? '');
             if (strpos($file, 'modCategory/') === 0) {
                 $categoryIdx = $i;
             }
-            // assets payload guid from historical builds
             if (strpos($file, 'd5b3f54c3fcafd31f24f2a7c3bf8af81') !== false) {
                 $assetsIdx = $i;
             }
         }
-        $this->assertNotNull($categoryIdx, 'modCategory vehicle missing');
-        $this->assertNotNull($assetsIdx, 'assets file vehicle missing');
-        $this->assertLessThan(
-            $assetsIdx,
-            $categoryIdx,
-            'Category+resolver must run before assets preserve (Beget hang)'
-        );
+        $this->assertNotNull($categoryIdx);
+        $this->assertNotNull($assetsIdx);
+        $this->assertLessThan($assetsIdx, $categoryIdx);
     }
 
-    public function testResolverContainsParentIdMigration(): void
-    {
-        $resolver = $this->unpackDir . '/' . $this->pkgName
-            . '/modCategory/2dfceb2c9077da0728bf95a73b366ae1.resolve.tables.resolver';
-        $src = file_get_contents($resolver);
-        $this->assertStringContainsString('parent_id', $src);
-        $this->assertStringContainsString('goldpriceEnsureColumn', $src);
-        $this->assertStringContainsString('ACTION_UPGRADE', $src);
-    }
-
-    public function testManifestHasChangelogAttribute(): void
+    public function testManifestHasChangelog(): void
     {
         $manifest = include $this->unpackDir . '/' . $this->pkgName . '/manifest.php';
         $this->assertNotEmpty($manifest['manifest-attributes']['changelog'] ?? '');

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4-pl — 2026-09-14
+
+- Миграция `parent_id` в резолвере **namespace** (до копирования файлов).
+- File vehicles: `preexisting_mode=REMOVE` — без `preserved.zip` (зависание на Beget).
+- Исправлена fatal в tables resolver: функция миграции объявлялась после вызова.
+
 ## 1.1.3-pl — 2026-09-14
 
 - Резолвер миграции `parent_id` ставится **до** vehicle assets: на апгрейде установка больше не зависает на `preserved.zip` до ALTER. Добавлен gate-тест порядка vehicles в zip.
