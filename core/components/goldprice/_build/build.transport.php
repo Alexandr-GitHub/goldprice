@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.1.0');
+define('PKG_VERSION', '1.1.1');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -196,6 +196,9 @@ $builder->setPackageAttributes(array(
     'readme' => file_exists($sources['build'] . 'docs/readme.txt')
         ? file_get_contents($sources['build'] . 'docs/readme.txt')
         : 'GoldPrice — dynamic gold pricing for MODX.',
+    'changelog' => file_exists($sources['build'] . 'docs/changelog.txt')
+        ? file_get_contents($sources['build'] . 'docs/changelog.txt')
+        : '',
 ));
 
 $builder->pack();
