@@ -9,7 +9,7 @@ set_time_limit(0);
 $tstart = microtime(true);
 
 define('PKG_NAME', 'goldprice');
-define('PKG_VERSION', '1.1.1');
+define('PKG_VERSION', '1.1.2');
 define('PKG_RELEASE', 'pl');
 
 $root = dirname(__DIR__) . '/';
@@ -182,11 +182,14 @@ $menu->fromArray(array(
     'namespace' => 'goldprice',
     'action' => 'home',
 ), '', true, true);
-$builder->putVehicle($builder->createVehicle($menu, array(
+// Tables resolver also on menu (after files): re-runs on upgrade if category vehicle was skipped.
+$menuVehicle = $builder->createVehicle($menu, array(
     xPDOTransport::PRESERVE_KEYS => true,
     xPDOTransport::UPDATE_OBJECT => true,
     xPDOTransport::UNIQUE_KEY => 'text',
-)));
+));
+$menuVehicle->resolve('php', array('source' => $sources['resolvers'] . 'resolve.tables.php'));
+$builder->putVehicle($menuVehicle);
 $modx->log(modX::LOG_LEVEL_INFO, 'Menu item packed.');
 
 $builder->setPackageAttributes(array(

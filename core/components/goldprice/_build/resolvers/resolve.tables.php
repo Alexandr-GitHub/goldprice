@@ -34,30 +34,21 @@ if ($transport->xpdo) {
             }
         }
 
-        // createObjectContainer does not add columns to an existing table
-        $groupTable = $modx->getTableName('GoldPriceGroup');
-        if ($groupTable) {
-            $stmt = $modx->query("SHOW COLUMNS FROM {$groupTable} LIKE 'parent_id'");
-            $exists = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
-            if (!$exists) {
-                $sql = "ALTER TABLE {$groupTable} ADD COLUMN `parent_id` int(10) unsigned NULL DEFAULT NULL AFTER `min_margin`, ADD KEY `parent_id` (`parent_id`)";
-                if ($modx->exec($sql) === false) {
-                    $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] Failed to add parent_id column');
-                }
-            }
-        }
-
-        $productTable = $modx->getTableName('GoldPriceProduct');
-        if ($productTable) {
-            $stmt = $modx->query("SHOW COLUMNS FROM {$productTable} LIKE 'custom_buy_fix'");
-            $exists = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
-            if (!$exists) {
-                $sql = "ALTER TABLE {$productTable} ADD COLUMN `custom_buy_fix` decimal(12,2) NOT NULL DEFAULT 0 AFTER `custom_fix`";
-                if ($modx->exec($sql) === false) {
-                    $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] Failed to add custom_buy_fix column');
-                }
-            }
-        }
+        // createObjectContainer never ALTERs an existing table — migrations must be explicit.
+        // Idempotent: safe on every install/upgrade. No AFTER clause (fragile if column order differs).
+        goldpriceEnsureColumn(
+            $modx,
+            'GoldPriceGroup',
+            'parent_id',
+            '`parent_id` int(10) unsigned NULL DEFAULT NULL',
+            'parent_id'
+        );
+        goldpriceEnsureColumn(
+            $modx,
+            'GoldPriceProduct',
+            'custom_buy_fix',
+            '`custom_buy_fix` decimal(12,2) NOT NULL DEFAULT 0'
+        );
 
         // Seed weight groups from ТЗ п.5.1 only when table is empty (idempotent).
         // Ids are explicit: goldprice_product.group_id references them.
@@ -138,6 +129,76 @@ if ($transport->xpdo) {
             if (!$recipient->save()) {
                 $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] Failed to seed default recipient');
             }
+        }
+    }
+}
+
+/**
+ * Add a missing column (and optional index) to an existing GoldPrice table.
+ *
+ * @param modX $modx
+ * @param string $class xPDO class name
+ * @param string $column
+ * @param string $definition full column DDL without leading ADD COLUMN
+ * @param string|null $indexName create KEY with this name if set
+ */
+if (!function_exists('goldpriceEnsureColumn')) {
+    function goldpriceEnsureColumn($modx, $class, $column, $definition, $indexName = null)
+    {
+        $table = $modx->getTableName($class);
+        if (!$table) {
+            $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] ensureColumn: no table for ' . $class);
+            return;
+        }
+
+        $stmt = $modx->query('SHOW COLUMNS FROM ' . $table . ' LIKE ' . $modx->quote($column));
+        if ($stmt === false) {
+            $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] ensureColumn: SHOW COLUMNS failed for ' . $table . '.' . $column);
+            return;
+        }
+        if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+            return;
+        }
+
+        $sql = 'ALTER TABLE ' . $table . ' ADD COLUMN ' . $definition;
+        if ($modx->exec($sql) === false) {
+            $err = method_exists($modx, 'errorInfo') ? $modx->errorInfo() : array();
+            $modx->log(
+                modX::LOG_LEVEL_ERROR,
+                '[goldprice] Failed ALTER ADD COLUMN ' . $table . '.' . $column . ': ' . json_encode($err) . ' SQL: ' . $sql
+            );
+            return;
+        }
+        $modx->log(modX::LOG_LEVEL_INFO, '[goldprice] Added column ' . $table . '.' . $column);
+
+        if ($indexName) {
+            $hasIdx = false;
+            $idx = $modx->query('SHOW INDEX FROM ' . $table);
+            if ($idx) {
+                while ($row = $idx->fetch(PDO::FETCH_ASSOC)) {
+                    if (isset($row['Key_name']) && $row['Key_name'] === $indexName) {
+                        $hasIdx = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasIdx) {
+                $sqlIdx = 'ALTER TABLE ' . $table . ' ADD KEY `' . $indexName . '` (`' . $column . '`)';
+                if ($modx->exec($sqlIdx) === false) {
+                    $err = method_exists($modx, 'errorInfo') ? $modx->errorInfo() : array();
+                    $modx->log(
+                        modX::LOG_LEVEL_ERROR,
+                        '[goldprice] Failed ALTER ADD KEY ' . $table . '.' . $indexName . ': ' . json_encode($err)
+                    );
+                } else {
+                    $modx->log(modX::LOG_LEVEL_INFO, '[goldprice] Added key ' . $table . '.' . $indexName);
+                }
+            }
+        }
+
+        $check = $modx->query('SHOW COLUMNS FROM ' . $table . ' LIKE ' . $modx->quote($column));
+        if (!$check || !$check->fetch(PDO::FETCH_ASSOC)) {
+            $modx->log(modX::LOG_LEVEL_ERROR, '[goldprice] Column still missing after ALTER: ' . $table . '.' . $column);
         }
     }
 }
